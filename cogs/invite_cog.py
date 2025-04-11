@@ -16,14 +16,20 @@ class InviteCog(commands.Cog):
     
     async def send_invite_embed(self, ctx_or_interaction):
         permissions = discord.Permissions(administrator=True)
-        invite_link = discord.utils.oauth_url(ctx_or_interaction.client.user.id, permissions=permissions)
+        # Fix the client/bot attribute based on context type
+        if isinstance(ctx_or_interaction, commands.Context):
+            bot_user = ctx_or_interaction.bot.user
+        else:
+            bot_user = ctx_or_interaction.client.user
+            
+        invite_link = discord.utils.oauth_url(bot_user.id, permissions=permissions)
         
         embed = discord.Embed(
             title="🌟 Invite Our Bot!",
             description="Enhance your server with powerful features! Click the button below to invite the bot now!",
             color=discord.Color.gold()
         )
-        embed.set_thumbnail(url=ctx_or_interaction.client.user.avatar.url)
+        embed.set_thumbnail(url=bot_user.avatar.url)
         embed.add_field(name="✨ Features", value="✔️ Moderation\n✔️ Fun Commands\n✔️ Utility Tools", inline=False)
         embed.add_field(name="🛠️ Setup", value="Use `/help` to explore commands.", inline=False)
         embed.set_footer(text="Thank you for supporting our bot! 🚀")

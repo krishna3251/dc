@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Bot Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <style>
+        .bot-features {
+            margin-top: 3rem;
+        }
+        .feature-card {
+            height: 100%;
+            transition: transform 0.3s;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        .icon-large {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="text-center mb-5">
+            <h1 class="display-4">Lexus Bot Dashboard</h1>
+            <p class="lead">A powerful Discord bot with moderation, music, and utility features</p>
+            <div class="badge bg-success mb-3">Bot Online</div>
+        </div>
+
+        <div class="row bot-features">
+            <div class="col-md-4 mb-4">
+                <div class="card feature-card">
+                    <div class="card-body text-center">
+                        <div class="icon-large">🛡️</div>
+                        <h5 class="card-title">Moderation</h5>
+                        <p class="card-text">Advanced tools for server management including warn, kick, ban, mute, and message purging.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card feature-card">
+                    <div class="card-body text-center">
+                        <div class="icon-large">🎵</div>
+                        <h5 class="card-title">Music</h5>
+                        <p class="card-text">High-quality music playback from YouTube with queue management and controls.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card feature-card">
+                    <div class="card-body text-center">
+                        <div class="icon-large">🔒</div>
+                        <h5 class="card-title">Permissions</h5>
+                        <p class="card-text">Granular channel and voice chat permission controls for server admins.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card feature-card">
+                    <div class="card-body text-center">
+                        <div class="icon-large">🚫</div>
+                        <h5 class="card-title">Anti-Spam</h5>
+                        <p class="card-text">Powerful tools to prevent mention and link spam in your server.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card feature-card">
+                    <div class="card-body text-center">
+                        <div class="icon-large">ℹ️</div>
+                        <h5 class="card-title">Information</h5>
+                        <p class="card-text">Detailed server and user information commands with rich embed displays.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card feature-card">
+                    <div class="card-body text-center">
+                        <div class="icon-large">📋</div>
+                        <h5 class="card-title">Help System</h5>
+                        <p class="card-text">Interactive help menu with dropdown categories for easy command discovery.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-5">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Getting Started</h5>
+                    <p class="card-text">Use the prefix <code>lx</code> followed by a command, or use slash commands. Type <code>lx help</code> for more information.</p>
+                    <button class="btn btn-primary">Invite to Server</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="mt-5 py-3 bg-dark">
+        <div class="container text-center">
+            <small class="text-muted">© 2025 Lexus Bot - All rights reserved</small>
+        </div>
+    </footer>
+</body>
+</html>

@@ -3,9 +3,11 @@ import asyncio
 import os
 import sys
 import logging
+import threading
 from discord.ext import commands
 from dotenv import load_dotenv  # Load environment variables
 from config import DISCORD_TOKEN
+from flask import Flask, render_template
 
 # Setup Logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s]: %(message)s")
@@ -18,6 +20,17 @@ intents.members = True  # Needed for user-related commands
 
 # Set Up Bot
 bot = commands.Bot(command_prefix="lx ", intents=intents, help_command=None)
+
+# Create Flask app
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/status')
+def status():
+    return {"status": "Bot is online!", "message": "Discord bot is running smoothly."}
 
 # Event: When Bot is Ready
 @bot.event
@@ -51,21 +64,33 @@ async def restart(ctx):
 
     os.execv(sys.executable, ["python"] + sys.argv)  # Restart the bot process
 
-# Proper Async Handling
-async def main():
+# Start the bot in a separate thread
+def run_discord_bot():
+    asyncio.run(bot_main())
+
+async def bot_main():
     async with bot:
         await load_extensions()
         await bot.start(DISCORD_TOKEN)
 
-# Start Bot with Proper Async Handling
+# Start Discord bot in a separate thread
+def start_bot_thread():
+    bot_thread = threading.Thread(target=run_discord_bot)
+    bot_thread.daemon = True
+    bot_thread.start()
+
+# This is used by the gunicorn server
+if __name__ != "__main__":
+    # Start the bot when imported by gunicorn
+    start_bot_thread()
+
+# For local development or when run directly
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
-    except RuntimeError:
-        logging.warning("⚠ Event loop already running. Switching to alternative method.")
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(main())
+        # Start the bot
+        start_bot_thread()
+        # Run the Flask app (for local testing)
+        app.run(host='0.0.0.0', port=5000)
     except KeyboardInterrupt:
         logging.info("🛑 Bot shutdown initiated.")
     except Exception as e:

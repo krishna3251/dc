@@ -7,8 +7,13 @@ import threading
 from discord.ext import commands
 from dotenv import load_dotenv  # Load environment variables
 from config import DISCORD_TOKEN
-from flask import Flask, render_template
 from db_handler import init_db
+
+# Import the Flask app for the web server workflow
+try:
+    from flask_app import app
+except ImportError:
+    app = None
 
 # Setup Logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s]: %(message)s")
@@ -21,17 +26,6 @@ intents.members = True  # Needed for user-related commands
 
 # Set Up Bot
 bot = commands.Bot(command_prefix="lx ", intents=intents, help_command=None)
-
-# Create Flask app
-app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return render_template('index.html')
-
-@app.route('/status')
-def status():
-    return {"status": "Bot is online!", "message": "Discord bot is running smoothly."}
 
 # Event: When Bot is Ready
 @bot.event
@@ -93,17 +87,15 @@ if __name__ != "__main__" and is_gunicorn:
     # Start the bot only if running through gunicorn
     start_bot_thread()
 
-# For local development or when run directly (bot workflow)
+# For local development or when run directly
 if __name__ == "__main__":
     try:
-        if "Bot Execution" in os.environ.get("REPL_WORKFLOW", ""):
-            # Just run the bot without web server
-            asyncio.run(bot_main())
-        else:
-            # Start the bot thread and web server
-            start_bot_thread()
-            # Run the Flask app
-            app.run(host='0.0.0.0', port=5000)
+        # Start the minimal web server
+        from keep_alive import keep_alive
+        keep_alive()  # Start minimal web server on port 8080
+        
+        # Run the bot directly
+        asyncio.run(bot_main())
     except KeyboardInterrupt:
         logging.info("🛑 Bot shutdown initiated.")
     except Exception as e:

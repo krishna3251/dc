@@ -14,8 +14,19 @@ Session = scoped_session(sessionmaker(bind=engine)) if engine else None
 def init_db():
     """Initialize database and tables"""
     if engine:
-        Base.metadata.create_all(engine)
-        print("✅ Database tables created!")
+        # Create tables only if they don't exist
+        from sqlalchemy import inspect
+        inspector = inspect(engine)
+        
+        # Get existing tables
+        existing_tables = inspector.get_table_names()
+        
+        if 'guilds' not in existing_tables:
+            # Tables don't exist yet, create them
+            Base.metadata.create_all(engine)
+            print("✅ Database tables created!")
+        else:
+            print("✅ Database tables already exist!")
     else:
         print("❌ No database connection available.")
 

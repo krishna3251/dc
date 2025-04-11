@@ -63,14 +63,30 @@ class DatabaseHandler:
             
         session = Session()
         try:
+            # First try to find existing guild settings
             guild = session.query(Guild).filter_by(id=guild_id).first()
+            
             if not guild:
-                # Create new guild settings if they don't exist
-                guild = Guild(id=guild_id)
-                session.add(guild)
-                session.commit()
+                try:
+                    # Create new guild settings if they don't exist
+                    guild = Guild(id=guild_id)
+                    session.add(guild)
+                    session.commit()
+                except Exception as e:
+                    # If we get a duplicate key error, another process likely created it
+                    # between our check and insert, so try to fetch it again
+                    session.rollback()
+                    
+                    # Try to find it one more time
+                    guild = session.query(Guild).filter_by(id=guild_id).first()
+                    
+                    # If still not found after the duplicate key error, something is wrong
+                    if not guild:
+                        print(f"Failed to create or retrieve guild settings for {guild_id}: {e}")
+                        return None
                 
             # Store in cache for faster future access
+            # Make a copy to prevent detached instance issues
             guild_settings_cache[guild_id] = guild
             return guild
         except Exception as e:

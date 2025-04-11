@@ -33,19 +33,26 @@ class AntiSpamCog(commands.Cog):
 
     def get_mention_limit(self, guild_id):
         """Get the mention limit for a specific guild with caching"""
+        # First check in-memory cache for fastest access
         if guild_id in self.server_settings:
             return self.server_settings[guild_id].get('mention_limit', self.default_mention_limit)
             
-        # Get from database
-        guild = DatabaseHandler.get_guild_settings(guild_id)
-        if guild and hasattr(guild, 'mention_limit'):
-            limit = guild.mention_limit
-            # Cache the result
-            if guild_id not in self.server_settings:
-                self.server_settings[guild_id] = {}
-            self.server_settings[guild_id]['mention_limit'] = limit
-            return limit
+        try:
+            # Get fresh data from database
+            guild = DatabaseHandler.get_guild_settings(guild_id)
+            if guild:
+                # Extract the limit value - don't keep the SQLAlchemy object in memory
+                limit = getattr(guild, 'mention_limit', self.default_mention_limit)
+                
+                # Update cache with just the value, not the SQLAlchemy object
+                if guild_id not in self.server_settings:
+                    self.server_settings[guild_id] = {}
+                self.server_settings[guild_id]['mention_limit'] = limit
+                return limit
+        except Exception as e:
+            print(f"Error getting mention limit: {e}")
             
+        # Fallback to default if any issue occurs
         return self.default_mention_limit
 
     @commands.Cog.listener()

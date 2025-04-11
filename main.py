@@ -15,17 +15,25 @@ try:
 except ImportError:
     app = None
 
-# Setup Logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s]: %(message)s")
+# Setup Logging - Reduced logging to WARNING level to improve performance
+logging.basicConfig(level=logging.WARNING, format="%(asctime)s [%(levelname)s]: %(message)s")
 
-# Enable Required Intents
+# Enable only necessary Intents - Optimized to reduce gateway payload size
 intents = discord.Intents.default()
 intents.message_content = True  # Required for text commands
 intents.guilds = True  # Ensures the bot can see servers
 intents.members = True  # Needed for user-related commands
+intents.presences = False  # Disabled to reduce payload
+intents.typing = False  # Disabled to reduce overhead
 
-# Set Up Bot
-bot = commands.Bot(command_prefix="lx ", intents=intents, help_command=None)
+# Set Up Bot with optimized chunk settings
+bot = commands.Bot(
+    command_prefix="lx ", 
+    intents=intents, 
+    help_command=None,
+    chunk_guilds_at_startup=False,  # Don't load all members immediately
+    max_messages=100  # Reduce message cache size
+)
 
 # Event: When Bot is Ready
 @bot.event

@@ -61,12 +61,20 @@ class MemberInfo(commands.Cog):
                 color=discord.Color.red()
             )
             embed.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
-            for member in mod_role.members:
-                embed.add_field(
-                    name=member.name,
-                    value=f"🆔 ID: {member.id}\n🔧 Permissions: {mod_role.permissions}",
-                    inline=True
-                )
+            
+            # Optimized to get all members with the role at once
+            members_with_role = [member for member in ctx.guild.members if isinstance(member, discord.Member) and mod_role in member.roles]
+            
+            if members_with_role:
+                for member in members_with_role:
+                    embed.add_field(
+                        name=member.display_name,
+                        value=f"🆔 ID: {member.id}\n🔧 Role: {mod_role.name}",
+                        inline=True
+                    )
+            else:
+                embed.description = f"No members have the {mod_role.name} role."
+                
             await ctx.send(embed=embed)
         else:
             await ctx.send("No Moderator role found.")

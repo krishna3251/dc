@@ -4,7 +4,6 @@ from discord import app_commands
 import aiohttp
 import random
 import os
-from db_handler import DatabaseHandler
 
 class GifButton(discord.ui.View):
     def __init__(self, cog, ctx_or_interaction, gif_type):
@@ -12,6 +11,30 @@ class GifButton(discord.ui.View):
         self.cog = cog
         self.ctx_or_interaction = ctx_or_interaction
         self.gif_type = gif_type
+        self.expired = False
+
+    async def on_timeout(self):
+        self.expired = True
+        for item in self.children:
+            item.disabled = True
+
+        embed = discord.Embed(
+            title=f"🎭 {self.gif_type.title()} GIF",
+            description="This session has expired. Please use the command again.",
+            color=discord.Color.dark_gray()
+        )
+        embed.set_footer(text="Session expired")
+
+        try:
+            await self.ctx_or_interaction.edit_original_response(embed=embed, view=self)
+        except Exception as e:
+            print(f"Error editing expired message: {e}")
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if self.expired:
+            await interaction.response.send_message("This button is no longer active. Please use the command again!", ephemeral=True)
+            return False
+        return True
 
     @discord.ui.button(label="🔄 New GIF", style=discord.ButtonStyle.primary)
     async def refresh_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -20,13 +43,14 @@ class GifButton(discord.ui.View):
         await interaction.edit_original_response(embed=embed, view=self)
 
 class GifCog(commands.Cog):
-    """🎭 GIF System - Random GIFs from Tenor, Giphy, and Custom Collection!"""
+    """🎭 GIF System - Random GIFs from AnimeGIF API, Tenor, and Giphy!"""
 
     def __init__(self, bot):
         self.bot = bot
         self.session = None
         self.tenor_key = os.getenv('TENOR_API_KEY')
         self.giphy_key = os.getenv('GIPHY_API_KEY')
+        self.custom_api_key = "ejIGCMPV65yS5BtPsbg6BtNsI1WUOHyU"
 
     async def cog_load(self):
         self.session = aiohttp.ClientSession()
@@ -62,31 +86,43 @@ class GifCog(commands.Cog):
         return None
 
     async def get_custom_gif(self, search_term):
-        gifs = DatabaseHandler.get_anime_gifs(search_term)
-        if gifs:
-            return random.choice(gifs), 'Custom'
+        url = f"https://animegif.xyz/api/gif?key={self.custom_api_key}&tag={search_term}"
+        try:
+            async with self.session.get(url) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("url"):
+                        return data["url"], "AnimeGIF"
+        except Exception as e:
+            print(f"AnimeGIF API error: {e}")
         return None, None
 
     async def get_gif_url(self, search_term):
-        # Try custom GIFs first
         gif_url, source = await self.get_custom_gif(search_term)
         if gif_url:
             return gif_url, source
 
-        # Try Tenor next
         gif_url = await self.get_tenor_gif(search_term)
         if gif_url:
             return gif_url, 'Tenor'
 
-        # Try Giphy as fallback
         gif_url = await self.get_giphy_gif(search_term)
         if gif_url:
             return gif_url, 'Giphy'
 
-        return "https://media.giphy.com/media/VgIums4vgV4iY/giphy.gif", 'Fallback'
+        return None, None  # No fallback!
 
     async def get_gif_embed(self, search_term):
         url, source = await self.get_gif_url(search_term)
+
+        if not url:
+            embed = discord.Embed(
+                title="❌ No GIF Found",
+                description=f"Could not find any GIFs for `{search_term}`.",
+                color=discord.Color.red()
+            )
+            embed.set_footer(text="Try a different keyword.")
+            return embed
 
         embed = discord.Embed(
             title=f"🎭 {search_term.title()} GIF",
@@ -96,7 +132,7 @@ class GifCog(commands.Cog):
         embed.set_footer(text=f"Source: {source} • Click the button for another GIF!")
         return embed
 
-    @app_commands.command(name="gif", description="🎭 Show a random GIF from Tenor, Giphy, or Custom collection")
+    @app_commands.command(name="gif", description="🎭 Show a random GIF from AnimeGIF, Tenor, or Giphy")
     @app_commands.describe(search="What kind of GIF to search for")
     async def gif_slash(self, interaction: discord.Interaction, search: str = "random"):
         search_term = search.lower().strip()
@@ -104,75 +140,12 @@ class GifCog(commands.Cog):
         view = GifButton(self, interaction, search_term)
         await interaction.response.send_message(embed=embed, view=view)
 
-    @commands.command(name="gif", help="🎭 Show a random GIF from Tenor, Giphy, or Custom collection")
+    @commands.command(name="gif", help="🎭 Show a random GIF from AnimeGIF, Tenor, or Giphy")
     async def gif_prefix(self, ctx, *, search: str = "random"):
         search_term = search.lower().strip()
         embed = await self.get_gif_embed(search_term)
         view = GifButton(self, ctx, search_term)
         await ctx.send(embed=embed, view=view)
-
-    @app_commands.command(
-        name="addgif",
-        description="🖼️ Add a custom GIF to the bot's collection")
-    @app_commands.describe(
-        category="Category for the GIF (dog, cat, anime, etc.)",
-        url="URL of the GIF to add")
-    @app_commands.checks.has_permissions(manage_guild=True)
-    async def add_gif_slash(self, interaction: discord.Interaction,
-                            category: str, url: str):
-        category = category.lower().strip()
-
-        if not (url.endswith(".gif") or url.endswith(".png")
-                or url.endswith(".jpg") or url.endswith(".jpeg")
-                or "giphy.com" in url or "tenor.com" in url):
-            await interaction.response.send_message(
-                "❌ Invalid URL format. Please provide a direct link to a GIF or image.",
-                ephemeral=True)
-            return
-
-        success = DatabaseHandler.add_anime_gif(category, url)
-
-        if success:
-            embed = discord.Embed(
-                title="✅ GIF Added Successfully",
-                description=f"Added a new {category} GIF to the collection!",
-                color=discord.Color.green())
-            embed.set_image(url=url)
-            embed.set_footer(text=f"Added by {interaction.user.name}")
-
-            await interaction.response.send_message(embed=embed)
-        else:
-            await interaction.response.send_message(
-                "❌ Failed to add GIF to the database. Please try again later.",
-                ephemeral=True)
-
-    @commands.command(name="addgif",
-                      help="🖼️ Add a custom GIF to the bot's collection")
-    @commands.has_permissions(manage_guild=True)
-    async def add_gif_prefix(self, ctx, category: str, url: str):
-        category = category.lower().strip()
-
-        if not (url.endswith(".gif") or url.endswith(".png")
-                or url.endswith(".jpg") or url.endswith(".jpeg")
-                or "giphy.com" in url or "tenor.com" in url):
-            await ctx.send(
-                "❌ Invalid URL format. Please provide a direct link to a GIF or image.")
-            return
-
-        success = DatabaseHandler.add_anime_gif(category, url)
-
-        if success:
-            embed = discord.Embed(
-                title="✅ GIF Added Successfully",
-                description=f"Added a new {category} GIF to the collection!",
-                color=discord.Color.green())
-            embed.set_image(url=url)
-            embed.set_footer(text=f"Added by {ctx.author.name}")
-
-            await ctx.send(embed=embed)
-        else:
-            await ctx.send(
-                "❌ Failed to add GIF to the database. Please try again later.")
 
 async def setup(bot):
     await bot.add_cog(GifCog(bot))

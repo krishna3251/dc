@@ -66,26 +66,76 @@ class Music(commands.Cog):
             await ctx.send("You need to be in a voice channel!")
             return None
 
+    # Song result cache to prevent repeated searches
+    song_cache = {}
+    
     def search_song(self, query):
+        # Check cache first
+        if query in self.song_cache:
+            return self.song_cache[query]
+            
         ydl_opts = {
             "format": "bestaudio/best",
             "noplaylist": True,
             "quiet": True,
-            "extract_flat": False,
-            "default_search": "ytsearch10",  # Faster search
+            "extract_flat": True,  # Faster extraction
+            "default_search": "ytsearch1",  # Only get the top result for faster search
             "ignoreerrors": True,
             "age_limit": 50,
             "cachedir": False,  # Disable cache for speed
+            # Add more optimizations
+            "skip_download": True,
+            "no_warnings": True,
+            "no_color": True,
+            "geo_bypass": True,  # Bypass geo-restrictions where possible
+            "socket_timeout": 3,  # Short timeout for faster failure
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             try:
                 info = ydl.extract_info(query, download=False)
+                
+                # Process results
                 if "entries" in info and info["entries"]:
-                    return info["entries"][0]["url"], info["entries"][0]["title"], info["entries"][0]["duration"], info["entries"][0]["thumbnail"]
+                    entry = info["entries"][0]
+                    # For search results, we need to get the full info
+                    if "_type" in entry and entry["_type"] == "url":
+                        # This is just a URL, get the full info
+                        full_info = ydl.extract_info(entry["url"], download=False)
+                        result = (
+                            full_info["url"], 
+                            full_info["title"], 
+                            full_info.get("duration", 0), 
+                            full_info.get("thumbnail", None)
+                        )
+                    else:
+                        # Direct result
+                        result = (
+                            entry["url"], 
+                            entry["title"], 
+                            entry.get("duration", 0), 
+                            entry.get("thumbnail", None)
+                        )
                 elif "url" in info:
-                    return info["url"], info["title"], info["duration"], info.get("thumbnail")
+                    # Direct URL input
+                    result = (
+                        info["url"], 
+                        info["title"], 
+                        info.get("duration", 0), 
+                        info.get("thumbnail", None)
+                    )
                 else:
-                    return None, None, None, None
+                    result = (None, None, None, None)
+                    
+                # Cache the result (only if successful)
+                if result[0]:
+                    self.song_cache[query] = result
+                    
+                    # Limit cache size to prevent memory issues
+                    if len(self.song_cache) > 100:
+                        # Remove oldest entry
+                        self.song_cache.pop(next(iter(self.song_cache)))
+                        
+                return result
             except Exception as e:
                 print(f"Error searching song: {e}")
                 return None, None, None, None
@@ -100,23 +150,63 @@ class Music(commands.Cog):
             await ctx.voice_client.disconnect()
 
     async def play_song(self, ctx, url, title, duration, thumbnail):
+        """Optimized play_song function with better error handling and latency reduction"""
         vc = await self.ensure_voice(ctx)
         if not vc:
             return
 
+        # Send "processing" message to give immediate feedback
+        processing_msg = await ctx.send("🔄 Processing audio stream...")
+        
+        # Optimized FFmpeg options for faster audio processing and lower latency
         FFMPEG_OPTIONS = {
-            "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 -analyzeduration 512K -probesize 512K",
-            "options": "-vn"
+            "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 2 -analyzeduration 512K -probesize 512K -thread_queue_size 4096",
+            "options": "-vn -af loudnorm=I=-16:LRA=11:TP=-1.5 -b:a 128k -bufsize 128k"  # Normalize audio and use lower bitrate for consistent playback
         }
+        
         try:
+            # Create audio source
             source = discord.FFmpegPCMAudio(url, **FFMPEG_OPTIONS)
-            vc.play(source, after=lambda e: asyncio.create_task(self.play_next(ctx)))
+            
+            # Add volume control if guild has volume setting
+            if ctx.guild.id in self.volume:
+                source = discord.PCMVolumeTransformer(source, volume=self.volume[ctx.guild.id])
+            else:
+                source = discord.PCMVolumeTransformer(source, volume=1.0)  # Default volume
+                self.volume[ctx.guild.id] = 1.0
+            
+            # Play the audio with a callback function
+            vc.play(
+                source, 
+                after=lambda e: asyncio.run_coroutine_threadsafe(
+                    self.play_next(ctx), 
+                    self.bot.loop
+                ).result() if e is None else print(f"Player error: {e}")
+            )
+            
+            # Create rich embed for now playing
             embed = Embed(title="🎶 Now Playing", description=f"[{title}]({url})", color=0xFFA500)
-            embed.set_thumbnail(url=thumbnail)
-            embed.set_footer(text=f"Duration: {duration // 60}:{duration % 60:02d}")
+            if thumbnail:
+                embed.set_thumbnail(url=thumbnail)
+            
+            # Format duration
+            minutes = duration // 60
+            seconds = duration % 60
+            embed.set_footer(text=f"Duration: {minutes}:{seconds:02d}")
+            
+            # Delete processing message and send now playing
+            await processing_msg.delete()
             await ctx.send(embed=embed, view=MusicView(ctx, self))
+            
         except Exception as e:
-            await ctx.send(f"Error playing song: {e}")
+            await processing_msg.delete()
+            await ctx.send(f"❌ Error playing song: {e}")
+            print(f"Music playback error: {e}")
+            
+            # Try to play next song if available
+            if ctx.guild.id in self.song_queue and self.song_queue[ctx.guild.id]:
+                await asyncio.sleep(1)  # Wait a bit before trying next
+                await self.play_next(ctx)
 
     @commands.command(name="play", help="Play music from YouTube or Spotify")
     async def play(self, ctx, *, query: str):

@@ -1,3 +1,4 @@
+
 import discord
 from discord.ext import commands
 import wavelink
@@ -9,15 +10,11 @@ class Music(commands.Cog):
 
     async def start_nodes(self):
         await self.bot.wait_until_ready()
-        await wavelink.Pool.connect(
-            client=self.bot,
-            nodes=[
-                {
-                    "uri": "https://lava-v3.ajieblogs.eu.org:443",
-                    "password": "https://dsc.gg/ajidevserver"
-                }
-            ]
+        node = wavelink.Node(
+            uri='https://lava-v3.ajieblogs.eu.org:443',
+            password='https://dsc.gg/ajidevserver'
         )
+        await wavelink.NodePool.connect(client=self.bot, nodes=[node])
 
     @commands.command()
     async def join(self, ctx: commands.Context):

@@ -12,9 +12,8 @@ class Music(commands.Cog):
     async def start_nodes(self):
         await self.bot.wait_until_ready()
         node = wavelink.Node(
-            uri='https://lava-v3.ajieblogs.eu.org:443',
-            password='https://dsc.gg/ajidevserver',
-            secure=True
+            uri='lava-v3.ajieblogs.eu.org:443',
+            password='https://dsc.gg/ajidevserver'
         )
         await wavelink.Pool.connect(nodes=[node], client=self.bot)
 

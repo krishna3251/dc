@@ -1,8 +1,6 @@
-
 import discord
 from discord.ext import commands
 import wavelink
-import os
 
 class Music(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -11,17 +9,21 @@ class Music(commands.Cog):
 
     async def start_nodes(self):
         await self.bot.wait_until_ready()
-        node = wavelink.Node(
-            uri='lava-v3.ajieblogs.eu.org:443',
-            password='https://dsc.gg/ajidevserver'
+        await wavelink.Pool.connect(
+            client=self.bot,
+            nodes=[
+                {
+                    "uri": "https://lava-v3.ajieblogs.eu.org:443",
+                    "password": "https://dsc.gg/ajidevserver"
+                }
+            ]
         )
-        await wavelink.Pool.connect(nodes=[node], client=self.bot)
 
     @commands.command()
     async def join(self, ctx: commands.Context):
         if ctx.author.voice:
             channel = ctx.author.voice.channel
-            player = await channel.connect(cls=wavelink.Player)
+            player: wavelink.Player = await channel.connect(cls=wavelink.Player)
             await ctx.send(f"Connected to {channel.name}!")
         else:
             await ctx.send("You are not connected to a voice channel.")
@@ -34,12 +36,12 @@ class Music(commands.Cog):
             else:
                 return await ctx.send("You need to be in a voice channel to play music.")
 
-        player = ctx.voice_client
+        player: wavelink.Player = ctx.voice_client
         tracks = await wavelink.YouTubeTrack.search(search)
-        
+
         if not tracks:
             return await ctx.send("No tracks found.")
-            
+
         track = tracks[0]
         await player.play(track)
         await ctx.send(f"Now playing: {track.title}")

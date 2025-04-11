@@ -3,13 +3,31 @@ import sqlalchemy as sa
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy import create_engine
 from models import Base, Guild, AutoRole, CustomCommand, RestrictedChannel, AllowedUser, UserSettings, AnimeGif
+import functools
 
 # Get database URL from environment variable
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
-# Create engine and session factory
-engine = create_engine(DATABASE_URL) if DATABASE_URL else None
-Session = scoped_session(sessionmaker(bind=engine)) if engine else None
+# Create engine and session factory with optimized settings for better performance
+if DATABASE_URL:
+    engine = create_engine(
+        DATABASE_URL,
+        pool_size=10,          # Increase connection pool size
+        max_overflow=20,       # Allow more overflow connections
+        pool_recycle=1800,     # Recycle connections after 30 minutes
+        pool_pre_ping=True,    # Verify connection is still valid before using
+        pool_timeout=30,       # Don't wait too long for a connection
+        echo=False             # No SQL debug logging
+    )
+    Session = scoped_session(sessionmaker(bind=engine))
+else:
+    engine = None
+    Session = None
+
+# Create cache dictionaries to reduce database queries
+guild_settings_cache = {}
+custom_commands_cache = {}
+restricted_channels_cache = {}
 
 def init_db():
     """Initialize database and tables"""
@@ -35,7 +53,11 @@ class DatabaseHandler:
     
     @staticmethod
     def get_guild_settings(guild_id):
-        """Get settings for a specific guild"""
+        """Get settings for a specific guild with caching for better performance"""
+        # Check cache first
+        if guild_id in guild_settings_cache:
+            return guild_settings_cache[guild_id]
+            
         if not Session:
             return None
             
@@ -47,6 +69,9 @@ class DatabaseHandler:
                 guild = Guild(id=guild_id)
                 session.add(guild)
                 session.commit()
+                
+            # Store in cache for faster future access
+            guild_settings_cache[guild_id] = guild
             return guild
         except Exception as e:
             print(f"Error getting guild settings: {e}")
@@ -57,7 +82,7 @@ class DatabaseHandler:
     
     @staticmethod
     def update_guild_settings(guild_id, **kwargs):
-        """Update guild settings with provided values"""
+        """Update guild settings with provided values and update cache"""
         if not Session:
             return False
             
@@ -73,6 +98,17 @@ class DatabaseHandler:
                         setattr(guild, key, value)
             
             session.commit()
+            
+            # Update the cache with the new settings
+            if guild_id in guild_settings_cache:
+                # Update existing cache entry
+                for key, value in kwargs.items():
+                    if hasattr(guild_settings_cache[guild_id], key):
+                        setattr(guild_settings_cache[guild_id], key, value)
+            else:
+                # Add to cache
+                guild_settings_cache[guild_id] = guild
+                
             return True
         except Exception as e:
             print(f"Error updating guild settings: {e}")
@@ -113,6 +149,40 @@ class DatabaseHandler:
             session.close()
     
     @staticmethod
+    def clear_cache(guild_id=None):
+        """Clear caches to prevent stale data
+        
+        Args:
+            guild_id: If provided, only clear caches for this guild
+        """
+        global guild_settings_cache, custom_commands_cache, restricted_channels_cache
+        
+        if guild_id is None:
+            # Clear all caches
+            guild_settings_cache = {}
+            custom_commands_cache = {}
+            restricted_channels_cache = {}
+        else:
+            # Clear only caches for the specified guild
+            
+            # Clear guild settings
+            if guild_id in guild_settings_cache:
+                del guild_settings_cache[guild_id]
+                
+            # Clear custom commands (keys are in format "{guild_id}_{command_name}")
+            to_remove = []
+            for key in custom_commands_cache:
+                if key.startswith(f"{guild_id}_"):
+                    to_remove.append(key)
+                    
+            for key in to_remove:
+                del custom_commands_cache[key]
+            
+            # Clear restricted channels
+            if guild_id in restricted_channels_cache:
+                del restricted_channels_cache[guild_id]
+                
+    @staticmethod
     def add_custom_command(guild_id, command_name, command_response):
         """Add or update a custom command for a guild"""
         if not Session:
@@ -138,6 +208,11 @@ class DatabaseHandler:
                 session.add(command)
                 
             session.commit()
+            
+            # Update cache
+            cache_key = f"{guild_id}_{command_name}"
+            custom_commands_cache[cache_key] = command
+            
             return True
         except Exception as e:
             print(f"Error adding custom command: {e}")
@@ -148,7 +223,14 @@ class DatabaseHandler:
     
     @staticmethod
     def get_custom_command(guild_id, command_name):
-        """Get a custom command for a guild"""
+        """Get a custom command for a guild with caching for better performance"""
+        # Create a cache key
+        cache_key = f"{guild_id}_{command_name}"
+        
+        # Check cache first
+        if cache_key in custom_commands_cache:
+            return custom_commands_cache[cache_key]
+            
         if not Session:
             return None
             
@@ -157,6 +239,11 @@ class DatabaseHandler:
             command = session.query(CustomCommand).filter_by(
                 guild_id=guild_id, name=command_name
             ).first()
+            
+            # Add to cache if found
+            if command:
+                custom_commands_cache[cache_key] = command
+                
             return command
         except Exception as e:
             print(f"Error getting custom command: {e}")

@@ -2,6 +2,7 @@
 import discord
 from discord.ext import commands
 import wavelink
+import os
 
 class Music(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -11,8 +12,9 @@ class Music(commands.Cog):
     async def start_nodes(self):
         await self.bot.wait_until_ready()
         node = wavelink.Node(
-            uri=f'http://{os.environ.get("REPL_SLUG")}.{os.environ.get("REPL_OWNER")}.repl.co:2333',
-            password='youshallnotpass'
+            uri='https://lava-v3.ajieblogs.eu.org:443',
+            password='https://dsc.gg/ajidevserver',
+            secure=True
         )
         await wavelink.Pool.connect(nodes=[node], client=self.bot)
 

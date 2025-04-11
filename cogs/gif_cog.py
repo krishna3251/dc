@@ -20,7 +20,7 @@ class GifButton(discord.ui.View):
         await interaction.edit_original_response(embed=embed, view=self)
 
 class GifCog(commands.Cog):
-    """🎭 GIF System - Random GIFs from Tenor and Giphy!"""
+    """🎭 GIF System - Random GIFs from Tenor, Giphy, and Custom Collection!"""
 
     def __init__(self, bot):
         self.bot = bot
@@ -61,8 +61,19 @@ class GifCog(commands.Cog):
             print(f"Giphy API error: {e}")
         return None
 
+    async def get_custom_gif(self, search_term):
+        gifs = DatabaseHandler.get_anime_gifs(search_term)
+        if gifs:
+            return random.choice(gifs), 'Custom'
+        return None, None
+
     async def get_gif_url(self, search_term):
-        # Try Tenor first
+        # Try custom GIFs first
+        gif_url, source = await self.get_custom_gif(search_term)
+        if gif_url:
+            return gif_url, source
+
+        # Try Tenor next
         gif_url = await self.get_tenor_gif(search_term)
         if gif_url:
             return gif_url, 'Tenor'
@@ -85,7 +96,7 @@ class GifCog(commands.Cog):
         embed.set_footer(text=f"Source: {source} • Click the button for another GIF!")
         return embed
 
-    @app_commands.command(name="gif", description="🎭 Show a random GIF from Tenor/Giphy")
+    @app_commands.command(name="gif", description="🎭 Show a random GIF from Tenor, Giphy, or Custom collection")
     @app_commands.describe(search="What kind of GIF to search for")
     async def gif_slash(self, interaction: discord.Interaction, search: str = "random"):
         search_term = search.lower().strip()
@@ -93,7 +104,7 @@ class GifCog(commands.Cog):
         view = GifButton(self, interaction, search_term)
         await interaction.response.send_message(embed=embed, view=view)
 
-    @commands.command(name="gif", help="🎭 Show a random GIF from Tenor/Giphy")
+    @commands.command(name="gif", help="🎭 Show a random GIF from Tenor, Giphy, or Custom collection")
     async def gif_prefix(self, ctx, *, search: str = "random"):
         search_term = search.lower().strip()
         embed = await self.get_gif_embed(search_term)
@@ -109,11 +120,8 @@ class GifCog(commands.Cog):
     @app_commands.checks.has_permissions(manage_guild=True)
     async def add_gif_slash(self, interaction: discord.Interaction,
                             category: str, url: str):
-        """Add a custom GIF to the database (slash command)"""
-        # Normalize the category
         category = category.lower().strip()
 
-        # Verify URL format
         if not (url.endswith(".gif") or url.endswith(".png")
                 or url.endswith(".jpg") or url.endswith(".jpeg")
                 or "giphy.com" in url or "tenor.com" in url):
@@ -122,7 +130,6 @@ class GifCog(commands.Cog):
                 ephemeral=True)
             return
 
-        # Add to database
         success = DatabaseHandler.add_anime_gif(category, url)
 
         if success:
@@ -143,20 +150,15 @@ class GifCog(commands.Cog):
                       help="🖼️ Add a custom GIF to the bot's collection")
     @commands.has_permissions(manage_guild=True)
     async def add_gif_prefix(self, ctx, category: str, url: str):
-        """Add a custom GIF to the database (prefix command)"""
-        # Normalize the category
         category = category.lower().strip()
 
-        # Verify URL format
         if not (url.endswith(".gif") or url.endswith(".png")
                 or url.endswith(".jpg") or url.endswith(".jpeg")
                 or "giphy.com" in url or "tenor.com" in url):
             await ctx.send(
-                "❌ Invalid URL format. Please provide a direct link to a GIF or image."
-            )
+                "❌ Invalid URL format. Please provide a direct link to a GIF or image.")
             return
 
-        # Add to database
         success = DatabaseHandler.add_anime_gif(category, url)
 
         if success:
@@ -171,7 +173,6 @@ class GifCog(commands.Cog):
         else:
             await ctx.send(
                 "❌ Failed to add GIF to the database. Please try again later.")
-
 
 async def setup(bot):
     await bot.add_cog(GifCog(bot))

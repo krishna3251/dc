@@ -11,7 +11,7 @@ class Music(commands.Cog):
     async def start_nodes(self):
         await self.bot.wait_until_ready()
         node = wavelink.Node(
-            uri='http://0.0.0.0:2333',
+            uri=f'http://{os.environ.get("REPL_SLUG")}.{os.environ.get("REPL_OWNER")}.repl.co:2333',
             password='youshallnotpass'
         )
         await wavelink.Pool.connect(nodes=[node], client=self.bot)

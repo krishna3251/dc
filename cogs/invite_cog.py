@@ -16,7 +16,7 @@ class InviteCog(commands.Cog):
     
     async def send_invite_embed(self, ctx_or_interaction):
         permissions = discord.Permissions(administrator=True)
-        # Fix the client/bot attribute based on context type
+        # Get bot user based on context type
         if isinstance(ctx_or_interaction, commands.Context):
             bot_user = ctx_or_interaction.bot.user
         else:

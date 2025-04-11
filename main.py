@@ -8,6 +8,7 @@ from discord.ext import commands
 from dotenv import load_dotenv  # Load environment variables
 from config import DISCORD_TOKEN
 from flask import Flask, render_template
+from db_handler import init_db
 
 # Setup Logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s]: %(message)s")
@@ -37,6 +38,9 @@ def status():
 async def on_ready():
     logging.info(f"✅ Bot is online as {bot.user}")
     try:
+        # Initialize the database
+        init_db()
+        # Sync slash commands
         await bot.tree.sync()  # Ensure slash commands are synced
         logging.info("✅ Slash commands synced successfully!")
     except Exception as e:
@@ -79,18 +83,27 @@ def start_bot_thread():
     bot_thread.daemon = True
     bot_thread.start()
 
-# This is used by the gunicorn server
-if __name__ != "__main__":
-    # Start the bot when imported by gunicorn
+# We need to identify whether we're being run from the workflow or directly
+# This ensures we don't run the bot twice
+import sys
+is_gunicorn = 'gunicorn' in sys.modules
+
+# For Gunicorn/workflow (only start bot if running from the web workflow)
+if __name__ != "__main__" and is_gunicorn:
+    # Start the bot only if running through gunicorn
     start_bot_thread()
 
-# For local development or when run directly
+# For local development or when run directly (bot workflow)
 if __name__ == "__main__":
     try:
-        # Start the bot
-        start_bot_thread()
-        # Run the Flask app (for local testing)
-        app.run(host='0.0.0.0', port=5000)
+        if "Bot Execution" in os.environ.get("REPL_WORKFLOW", ""):
+            # Just run the bot without web server
+            asyncio.run(bot_main())
+        else:
+            # Start the bot thread and web server
+            start_bot_thread()
+            # Run the Flask app
+            app.run(host='0.0.0.0', port=5000)
     except KeyboardInterrupt:
         logging.info("🛑 Bot shutdown initiated.")
     except Exception as e:

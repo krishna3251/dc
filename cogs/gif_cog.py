@@ -3,22 +3,10 @@ from discord.ext import commands
 from discord import app_commands
 import aiohttp
 import random
+import os
 from db_handler import DatabaseHandler
 
-# List of popular anime GIF APIs
-ANIME_ENDPOINTS = {
-    "dog": "https://api.thedogapi.com/v1/images/search",
-    "cat": "https://api.thecatapi.com/v1/images/search",
-    "fox": "https://randomfox.ca/floof/",
-    "anime": "https://api.waifu.pics/sfw/waifu",
-    "neko": "https://api.waifu.pics/sfw/neko",
-    "megumin": "https://api.waifu.pics/sfw/megumin",
-    "shinobu": "https://api.waifu.pics/sfw/shinobu"
-}
-
-
 class GifButton(discord.ui.View):
-
     def __init__(self, cog, ctx_or_interaction, gif_type):
         super().__init__(timeout=60)
         self.cog = cog
@@ -26,129 +14,90 @@ class GifButton(discord.ui.View):
         self.gif_type = gif_type
 
     @discord.ui.button(label="🔄 New GIF", style=discord.ButtonStyle.primary)
-    async def refresh_button(self, interaction: discord.Interaction,
-                             button: discord.ui.Button):
-        """Get a new random GIF of the same type"""
+    async def refresh_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
-
-        # Get a new GIF and edit the message
         embed = await self.cog.get_gif_embed(self.gif_type)
         await interaction.edit_original_response(embed=embed, view=self)
 
-
 class GifCog(commands.Cog):
-    """🎭 Anime & Animal GIF System - Random GIFs on demand!"""
+    """🎭 GIF System - Random GIFs from Tenor and Giphy!"""
 
     def __init__(self, bot):
         self.bot = bot
-        self.session = None  # Will be initialized in cog_load
+        self.session = None
+        self.tenor_key = os.getenv('TENOR_API_KEY')
+        self.giphy_key = os.getenv('GIPHY_API_KEY')
 
     async def cog_load(self):
-        """Initialize HTTP session when cog is loaded"""
         self.session = aiohttp.ClientSession()
 
     async def cog_unload(self):
-        """Close HTTP session when cog is unloaded"""
         if self.session:
             await self.session.close()
 
-    async def get_gif_url(self, gif_type):
-        """Fetch a GIF URL from the appropriate API based on type"""
-        # First check the database for custom GIFs
-        db_gif = DatabaseHandler.get_random_gif(category=gif_type)
-        if db_gif:
-            return db_gif.url
-
-        # If no custom GIF found, use external APIs
-        if gif_type not in ANIME_ENDPOINTS:
-            # Default to a random type if not found
-            gif_type = random.choice(list(ANIME_ENDPOINTS.keys()))
-
-        endpoint = ANIME_ENDPOINTS[gif_type]
+    async def get_tenor_gif(self, search_term):
+        url = f"https://tenor.googleapis.com/v2/search?q={search_term}&key={self.tenor_key}&limit=20"
         try:
-            async with self.session.get(endpoint) as response:
+            async with self.session.get(url) as response:
                 if response.status == 200:
                     data = await response.json()
-
-                    # Different APIs have different response formats
-                    if gif_type in ["dog", "cat"]:
-                        return data[0]["url"]
-                    elif gif_type == "fox":
-                        return data["image"]
-                    else:  # anime APIs
-                        return data["url"]
-
+                    if data['results']:
+                        result = random.choice(data['results'])
+                        return result['media_formats']['gif']['url']
         except Exception as e:
-            print(f"Error fetching GIF: {e}")
-            # Fallback to a reliable GIF if API fails
-            return "https://media.giphy.com/media/VgIums4vgV4iY/giphy.gif"
+            print(f"Tenor API error: {e}")
+        return None
 
-    async def get_gif_embed(self, gif_type):
-        """Create an embed with a random GIF of the specified type"""
-        url = await self.get_gif_url(gif_type)
+    async def get_giphy_gif(self, search_term):
+        url = f"https://api.giphy.com/v1/gifs/search?api_key={self.giphy_key}&q={search_term}&limit=20"
+        try:
+            async with self.session.get(url) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data['data']:
+                        result = random.choice(data['data'])
+                        return result['images']['original']['url']
+        except Exception as e:
+            print(f"Giphy API error: {e}")
+        return None
 
-        # Custom titles and colors based on GIF type
-        titles = {
-            "dog": "🐶 Woof! Here's a cute doggo!",
-            "cat": "😺 Meow! Here's a cute kitty!",
-            "fox": "🦊 What does the fox say?",
-            "anime": "✨ Random Anime GIF",
-            "neko": "😸 Neko GIF",
-            "megumin": "💥 Megumin!",
-            "shinobu": "🦋 Shinobu Moment"
-        }
+    async def get_gif_url(self, search_term):
+        # Try Tenor first
+        gif_url = await self.get_tenor_gif(search_term)
+        if gif_url:
+            return gif_url, 'Tenor'
 
-        colors = {
-            "dog": discord.Color.from_rgb(133, 94, 66),  # Brown
-            "cat": discord.Color.from_rgb(255, 165, 0),  # Orange
-            "fox": discord.Color.from_rgb(255, 69, 0),  # Red-orange
-            "anime": discord.Color.from_rgb(255, 105, 180),  # Pink
-            "neko": discord.Color.from_rgb(255, 192, 203),  # Light pink
-            "megumin": discord.Color.from_rgb(255, 0, 0),  # Red
-            "shinobu": discord.Color.from_rgb(155, 89, 182)  # Purple
-        }
+        # Try Giphy as fallback
+        gif_url = await self.get_giphy_gif(search_term)
+        if gif_url:
+            return gif_url, 'Giphy'
 
-        title = titles.get(gif_type, f"🎭 Random {gif_type.title()} GIF")
-        color = colors.get(gif_type, discord.Color.blurple())
+        return "https://media.giphy.com/media/VgIums4vgV4iY/giphy.gif", 'Fallback'
 
-        embed = discord.Embed(title=title, color=color)
-        embed.set_image(url=url)
-        embed.set_footer(
-            text=f"Type: {gif_type.title()} • Click the button for another GIF!"
+    async def get_gif_embed(self, search_term):
+        url, source = await self.get_gif_url(search_term)
+
+        embed = discord.Embed(
+            title=f"🎭 {search_term.title()} GIF",
+            color=discord.Color.random()
         )
-
+        embed.set_image(url=url)
+        embed.set_footer(text=f"Source: {source} • Click the button for another GIF!")
         return embed
 
-    @app_commands.command(
-        name="gif", description="🎭 Show a random GIF of a specified type")
-    @app_commands.describe(
-        type="Type of GIF to show (dog, cat, fox, anime, neko, etc.)")
-    async def gif_slash(self,
-                        interaction: discord.Interaction,
-                        type: str = "dog"):
-        """Send a random GIF with a button to get a new one"""
-        # Normalize the type (lowercase, strip spaces)
-        gif_type = type.lower().strip()
-
-        # Create the GIF embed
-        embed = await self.get_gif_embed(gif_type)
-
-        # Send with button for getting a new GIF
-        view = GifButton(self, interaction, gif_type)
+    @app_commands.command(name="gif", description="🎭 Show a random GIF from Tenor/Giphy")
+    @app_commands.describe(search="What kind of GIF to search for")
+    async def gif_slash(self, interaction: discord.Interaction, search: str = "random"):
+        search_term = search.lower().strip()
+        embed = await self.get_gif_embed(search_term)
+        view = GifButton(self, interaction, search_term)
         await interaction.response.send_message(embed=embed, view=view)
 
-    @commands.command(name="gif",
-                      help="🎭 Show a random GIF of a specified type")
-    async def gif_prefix(self, ctx, gif_type: str = "dog"):
-        """Send a random GIF with a button to get a new one (prefix version)"""
-        # Normalize the type (lowercase, strip spaces)
-        gif_type = gif_type.lower().strip()
-
-        # Create the GIF embed
-        embed = await self.get_gif_embed(gif_type)
-
-        # Send with button for getting a new GIF
-        view = GifButton(self, ctx, gif_type)
+    @commands.command(name="gif", help="🎭 Show a random GIF from Tenor/Giphy")
+    async def gif_prefix(self, ctx, *, search: str = "random"):
+        search_term = search.lower().strip()
+        embed = await self.get_gif_embed(search_term)
+        view = GifButton(self, ctx, search_term)
         await ctx.send(embed=embed, view=view)
 
     @app_commands.command(

@@ -15,7 +15,7 @@ class CategorySelect(discord.ui.Select):
                 value=cog_name
             )
             for cog_name in bot.cogs.keys()
-            if not cog_name.startswith("Help")  # Skip HelpCog itself
+            if not cog_name.startswith("Help")  # Hide HelpCog from list
         ]
 
         super().__init__(placeholder="Choose a command category...", min_values=1, max_values=1, options=options)
@@ -35,7 +35,7 @@ class CategorySelect(discord.ui.Select):
                 inline=False
             )
 
-        embed.set_footer(text="Use the dropdown to switch categories | Back button to return")
+        embed.set_footer(text="Use the dropdown to switch categories | 🔙 to go back")
 
         await interaction.response.edit_message(embed=embed, view=self.view)
 

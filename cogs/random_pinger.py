@@ -6,12 +6,13 @@ from discord import app_commands
 class SarcasticPinger(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.tree = app_commands.CommandTree(bot)
         self.PING_CHANNELS = {}     # guild_id: channel_id
         self.ENABLED_GUILDS = set()
-        self.animal_gifs = [
-            "https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif",  # cat
-            "https://media.giphy.com/media/mlvseq9yvZhba/giphy.gif",  # dog
+
+        # Don't touch - User's precious sarcasm and GIFs
+        self.animal_gifs = [  # Safe collection of GIFs
+            "https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif",
+            "https://media.giphy.com/media/mlvseq9yvZhba/giphy.gif",
             "https://media.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif",
             "https://media.giphy.com/media/OmK8lulOMQ9XO/giphy.gif",
             "https://media.giphy.com/media/12HZukMBlutpoQ/giphy.gif"
@@ -46,6 +47,7 @@ class SarcasticPinger(commands.Cog):
             "Itna dead toh mera pichla relationship bhi nahi tha 💔", "Chat ka CPR shuru kar doon kya? 💉",
             "Kya koi hai jo emoji bhej ke channel zinda kare? 🙵", "Hello ghosts of the server… 👻 It’s me, your friendly bot!"
         ]
+
         self.ping_members.start()
 
     def cog_unload(self):
@@ -58,10 +60,8 @@ class SarcasticPinger(commands.Cog):
             if guild.id not in self.ENABLED_GUILDS:
                 continue
 
-            channel = guild.get_channel(self.PING_CHANNELS.get(guild.id)) if guild.id in self.PING_CHANNELS else None
+            channel = guild.get_channel(self.PING_CHANNELS.get(guild.id)) if guild.id in self.PING_CHANNELS else guild.system_channel
             if not channel or not channel.permissions_for(guild.me).send_messages:
-                channel = guild.system_channel or discord.utils.get(guild.text_channels, permissions__send_messages=True)
-            if not channel:
                 continue
 
             members = await self.get_eligible_members(guild)
@@ -74,12 +74,13 @@ class SarcasticPinger(commands.Cog):
             await self.send_ping_embed(channel, guild, member, line, "👀 Someone's Active!", gif)
 
     async def get_eligible_members(self, guild):
-        members = [m for m in guild.members if not m.bot and m.status != discord.Status.offline]
-        return members if members else [m for m in guild.members if not m.bot]
+        online_members = [m for m in guild.members if not m.bot and m.status != discord.Status.offline]
+        return online_members or [m for m in guild.members if not m.bot]
 
     async def send_ping_embed(self, channel, guild, member, line, title, gif_url):
         embed = discord.Embed(description=f"{member.mention} {line}", color=discord.Color.orange())
-        embed.set_author(name=title, icon_url=guild.icon.url if guild.icon else discord.Embed.Empty)
+        icon_url = guild.icon.url if guild.icon else discord.Embed.Empty
+        embed.set_author(name=title, icon_url=icon_url)
         embed.set_footer(text="Made with ❤️")
         embed.set_image(url=gif_url)
 
@@ -91,40 +92,43 @@ class SarcasticPinger(commands.Cog):
         stats.add_field(name="🎯 Pinged", value=member.mention, inline=True)
 
         view = discord.ui.View()
-        view.add_item(discord.ui.Button(label="More Sarcasm", style=discord.ButtonStyle.secondary))
-        view.add_item(discord.ui.Button(label="Revive Chat", style=discord.ButtonStyle.success))
+        view.add_item(discord.ui.Button(label="More Sarcasm", style=discord.ButtonStyle.secondary, disabled=True))
+        view.add_item(discord.ui.Button(label="Revive Chat", style=discord.ButtonStyle.success, disabled=True))
 
-        msg = await channel.send(embeds=[embed, stats], view=view)
-        for emoji in ("👀", "😂", "🔥"):
-            await msg.add_reaction(emoji)
+        try:
+            msg = await channel.send(embeds=[embed, stats], view=view)
+            for emoji in ("👀", "😂", "🔥"):
+                await msg.add_reaction(emoji)
+        except discord.Forbidden:
+            pass  # Handle no permission case silently
 
     @app_commands.command(name="setpingchannel", description="Set this channel for pings")
     async def set_ping_channel(self, interaction: discord.Interaction):
         self.PING_CHANNELS[interaction.guild_id] = interaction.channel_id
-        await interaction.response.send_message(f"This channel is now set for sarcastic pings! ✅", ephemeral=True)
+        await interaction.response.send_message("✅ This channel is now set for sarcastic pings!", ephemeral=True)
 
-    @app_commands.command(name="toggleping", description="Enable/Disable sarcastic pings in this server")
+    @app_commands.command(name="toggleping", description="Enable/Disable sarcastic pings")
     async def toggle_ping(self, interaction: discord.Interaction):
         gid = interaction.guild_id
         if gid in self.ENABLED_GUILDS:
             self.ENABLED_GUILDS.remove(gid)
-            await interaction.response.send_message("Sarcastic pings disabled! 🚫", ephemeral=True)
+            await interaction.response.send_message("🔕 Sarcastic pings disabled!", ephemeral=True)
         else:
             self.ENABLED_GUILDS.add(gid)
-            await interaction.response.send_message("Sarcastic pings enabled! 🎉", ephemeral=True)
+            await interaction.response.send_message("🔔 Sarcastic pings enabled!", ephemeral=True)
 
-    @app_commands.command(name="testping", description="Test a random sarcastic ping")
+    @app_commands.command(name="testping", description="Test a sarcastic ping")
     async def test_ping(self, interaction: discord.Interaction):
-        guild = interaction.guild
-        members = await self.get_eligible_members(guild)
+        members = await self.get_eligible_members(interaction.guild)
         if not members:
-            await interaction.response.send_message("No one to ping! 😢", ephemeral=True)
+            await interaction.response.send_message("😢 No eligible members found.", ephemeral=True)
             return
+
         member = random.choice(members)
         gif = random.choice(self.animal_gifs)
         line = random.choice(self.sarcasm_lines)
-        await self.send_ping_embed(interaction.channel, guild, member, line, "🔁 Test Ping", gif)
-        await interaction.response.send_message("Ping sent! 🧠", ephemeral=True)
+        await self.send_ping_embed(interaction.channel, interaction.guild, member, line, "🔁 Test Ping", gif)
+        await interaction.response.send_message("🧠 Test ping sent!", ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(SarcasticPinger(bot))

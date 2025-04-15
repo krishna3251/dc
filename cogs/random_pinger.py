@@ -89,11 +89,58 @@ class SarcasticPinger(commands.Cog):
         stats.add_field(name="🛡️ Roles", value=len(guild.roles), inline=True)
         stats.add_field(name="🎯 Pinged", value=member.mention, inline=True)
 
-        msg = await channel.send(embeds=[embed, stats])
+        view = discord.ui.View()
+        view.add_item(discord.ui.Button(label="Test Ping", style=discord.ButtonStyle.green, custom_id="test_ping"))
+        view.add_item(discord.ui.Button(label="Toggle Ping", style=discord.ButtonStyle.primary, custom_id="toggle_ping"))
+        msg = await channel.send(embeds=[embed, stats], view=view)
         for emoji in ("👀", "😂", "🔥"):
             await msg.add_reaction(emoji)
 
-    # Command and slash setup remains unchanged from the original code
+    @commands.command()
+    async def setpingchannel(self, ctx):
+        self.PING_CHANNELS[ctx.guild.id] = ctx.channel.id
+        await ctx.send(f"This channel has been set for pings: {ctx.channel.mention}")
+
+    @commands.command()
+    async def toggleping(self, ctx):
+        if ctx.guild.id in self.ENABLED_GUILDS:
+            self.ENABLED_GUILDS.remove(ctx.guild.id)
+            await ctx.send("🔕 Auto ping disabled.")
+        else:
+            self.ENABLED_GUILDS.add(ctx.guild.id)
+            await ctx.send("🔔 Auto ping enabled.")
+
+    @commands.command()
+    async def testping(self, ctx):
+        members = await self.get_eligible_members(ctx.guild)
+        if not members:
+            return await ctx.send("No eligible members to ping.")
+
+        member = random.choice(members)
+        line = random.choice(self.sarcasm_lines)
+        gif = random.choice(self.animal_gifs)
+        await self.send_ping_embed(ctx.channel, ctx.guild, member, line, "🔧 Test Ping", gif)
+
+    @commands.Cog.listener()
+    async def on_interaction(self, interaction: discord.Interaction):
+        if not interaction.guild or not interaction.user.guild_permissions.manage_guild:
+            return
+
+        if interaction.data.get("custom_id") == "test_ping":
+            members = await self.get_eligible_members(interaction.guild)
+            member = random.choice(members)
+            line = random.choice(self.sarcasm_lines)
+            gif = random.choice(self.animal_gifs)
+            await self.send_ping_embed(interaction.channel, interaction.guild, member, line, "🔧 Test Ping", gif)
+            await interaction.response.defer()
+
+        elif interaction.data.get("custom_id") == "toggle_ping":
+            if interaction.guild.id in self.ENABLED_GUILDS:
+                self.ENABLED_GUILDS.remove(interaction.guild.id)
+                await interaction.response.send_message("🔕 Auto ping disabled.", ephemeral=True)
+            else:
+                self.ENABLED_GUILDS.add(interaction.guild.id)
+                await interaction.response.send_message("🔔 Auto ping enabled.", ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(SarcasticPinger(bot))

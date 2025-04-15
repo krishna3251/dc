@@ -1,48 +1,28 @@
 import discord
 import random
-import aiohttp
-import os
 from discord.ext import commands, tasks
 from discord import app_commands
-from dotenv import load_dotenv
 
-load_dotenv()
-GIPHY_API_KEY = os.getenv("GIPHY_API_KEY")
-
-ENABLED_GUILDS = set()
-PING_CHANNELS = {}
-
-class RandomPinger(commands.Cog):
+class SarcasticPinger(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.PING_ROLES = {}        # guild_id: role_id
+        self.PING_CHANNELS = {}     # guild_id: channel_id
+        self.ENABLED_GUILDS = set()
         self.sarcasm_lines = [
-            "kya chal raha hai bro? 🤨",
-            "tum abhi tak server mein ho? 😏",
-            "kaam dhanda nahi hai kya? 😌",
-            "bada hi important aadmi ban gaya tu toh 😎",
-            "tumhare bina ye server adhoora hai... NOT 😂",
-            "bot bhi bored ho gaya dekh ke tumhe 😶",
-            "coding ho gayi khatam ya break par ho abhi bhi? 👀",
-            "tum jaise logon ke wajah se hi memes bante hain 😄",
-            "offline hoke bhi active rehne ka talent chahiye 💀",
-            "ab toh bot bhi ping kar raha hai, samaj ja bro 🙃",
-            "tumse milke server ka load badh gaya hai 💻",
-            "arey waah! hamare celebrity aaye! 😏",
-            "mujhe laga tu busy hai, lekin tu toh chill kar raha 😒",
-            "tumhara naam har jagah hai... even in my error logs 😬",
-            "kya kar raha hai? Reply de warna bot sad ho jayega 😢",
-            "tumhe ping karne se zyada accha RAM upgrade karna hai 😆",
-            "Hello darkness my old friend... 🕳️",
-            "Iss channel mein toh cobweb bhi bored ho gaya hai 🕸️",
-            "Chat toh itni dead hai ki archaeologists bhi khoj rahe hain 😩",
-            "Lagta hai sab ne typing license cancel karwa liya 💀",
-            "Iss channel mein silence ka subscription free hai kya? 😐",
-            "Ping maar raha hoon… koi toh bol de ‘hi’ nahi toh server ko CPR do 🫠",
-            "Dead server? Nahi bhai, yeh toh extinct hai 💀🦖",
-            "Ye channel last active tha jab dinosaurs jeevit the 🦕",
-            "Kya chal raha hai sab? ...oh wait, kuch bhi nahi 😑",
-            "Lagta hai Discord ne bhi is channel ka notification band kar diya 😭",
-            "Sun raha hai na tu? Ya sirf pfp dekh ke afk ho gaya? 😏",
+            "kya chal raha hai bro? 🤨", "tum abhi tak server mein ho? 😏", "kaam dhanda nahi hai kya? 😌",
+            "bada hi important aadmi ban gaya tu toh 😎", "tumhare bina ye server adhoora hai... NOT 😂",
+            "bot bhi bored ho gaya dekh ke tumhe 😶", "coding ho gayi khatam ya break par ho abhi bhi? 👀",
+            "tum jaise logon ke wajah se hi memes bante hain 😄", "offline hoke bhi active rehne ka talent chahiye 💀",
+            "ab toh bot bhi ping kar raha hai, samaj ja bro 🙃", "tumse milke server ka load badh gaya hai 💻",
+            "arey waah! hamare celebrity aaye! 😏", "mujhe laga tu busy hai, lekin tu toh chill kar raha 😒",
+            "tumhara naam har jagah hai... even in my error logs 😬", "kya kar raha hai? Reply de warna bot sad ho jayega 😢",
+            "tumhe ping karne se zyada accha RAM upgrade karna hai 😆", "Hello darkness my old friend... 🕳️",
+            "Iss channel mein toh cobweb bhi bored ho gaya hai 🕸️", "Chat toh itni dead hai ki archaeologists bhi khoj rahe hain 😩",
+            "Lagta hai sab ne typing license cancel karwa liya 💀", "Iss channel mein silence ka subscription free hai kya? 😐",
+            "Ping maar raha hoon… koi toh bol de ‘hi’ nahi toh server ko CPR do 🫠", "Dead server? Nahi bhai, yeh toh extinct hai 💀🦖",
+            "Ye channel last active tha jab dinosaurs jeevit the 🦕", "Kya chal raha hai sab? ...oh wait, kuch bhi nahi 😑",
+            "Lagta hai Discord ne bhi is channel ka notification band kar diya 😭", "Sun raha hai na tu? Ya sirf pfp dekh ke afk ho gaya? 😏",
             "Aree main toh bas ek bot hoon, par teri online status pe crush ho gaya 💘",
             "Mujhe laga yahan waise log honge jo 'hi' ka reply dete hain… clearly I was wrong 😔",
             "Channel dead hai, par tu active ho toh mera system lag hone lagta hai 😳",
@@ -54,156 +34,147 @@ class RandomPinger(commands.Cog):
             "Bolo na kuch... warna flirting karne lagunga 😈",
             "Yeh channel itna dead hai ki archaeologists bhi confuse ho jaayein 😵‍💫",
             "Bhai yeh desert hai kya? Itni silence toh mummy ke room mein hoti hai 🧟‍♂️",
-            "Lagta hai sabko Thanos ne snap kar diya 😶‍🌫️",
-            "Channel revive karne ke liye black magic mangwana padega kya? 🔮",
-            "Bot hoon, par mujhe bhi tanhayi mehsoos ho rahi hai yahan 😭",
-            "Hello? Is this mic on? Oh wait... nobody’s here anyway 🎤",
-            "Itna dead toh mera pichla relationship bhi nahi tha 💔",
-            "Chat ka CPR shuru kar doon kya? 💉",
-            "Kya koi hai jo emoji bhej ke channel zinda kare? 😵",
-            "Hello ghosts of the server… 👻 It’s me, your friendly bot!"
+            "Lagta hai sabko Thanos ne snap kar diya 😶‍🌫️", "Channel revive karne ke liye black magic mangwana padega kya? 🔮",
+            "Bot hoon, par mujhe bhi tanhayi mehsoos ho rahi hai yahan 😭", "Hello? Is this mic on? Oh wait... nobody’s here anyway 🎤",
+            "Itna dead toh mera pichla relationship bhi nahi tha 💔", "Chat ka CPR shuru kar doon kya? 💉",
+            "Kya koi hai jo emoji bhej ke channel zinda kare? 😵", "Hello ghosts of the server… 👻 It’s me, your friendly bot!"
         ]
         self.ping_members.start()
 
     def cog_unload(self):
         self.ping_members.cancel()
 
-    async def get_random_gif(self, search_term="funny animals"):
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    f"https://api.giphy.com/v1/gifs/search",
-                    params={"api_key": GIPHY_API_KEY, "q": search_term, "limit": 25, "rating": "pg"}
-                ) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        results = data.get("data", [])
-                        if results:
-                            gif_url = random.choice(results).get("images", {}).get("original", {}).get("url")
-                            return gif_url
-        except:
-            pass
-        return None
-
     @tasks.loop(hours=6)
     async def ping_members(self):
         await self.bot.wait_until_ready()
-
         for guild in self.bot.guilds:
-            if guild.id not in ENABLED_GUILDS:
+            if guild.id not in self.ENABLED_GUILDS:
                 continue
 
-            channel = guild.get_channel(PING_CHANNELS.get(guild.id)) if guild.id in PING_CHANNELS else None
+            channel = guild.get_channel(self.PING_CHANNELS.get(guild.id)) if guild.id in self.PING_CHANNELS else None
             if not channel or not channel.permissions_for(guild.me).send_messages:
-                valid_channels = [ch for ch in guild.text_channels if ch.permissions_for(guild.me).send_messages]
-                if not valid_channels:
-                    continue
-                channel = random.choice(valid_channels)
+                channel = guild.system_channel or discord.utils.get(guild.text_channels, permissions__send_messages=True)
+            if not channel:
+                continue
 
-            members = [m for m in guild.members if not m.bot]
+            members = await self.get_eligible_members(guild)
             if not members:
                 continue
 
             member = random.choice(members)
-            message = random.choice(self.sarcasm_lines)
-            gif_url = await self.get_random_gif()
+            line = random.choice(self.sarcasm_lines)
+            await self.send_ping_embed(channel, guild, member, line, "👀 Someone's Active!")
 
-            embed = discord.Embed(
-                title="👀 Someone's Getting Called Out!",
-                description=f"{member.mention} {message}",
-                color=discord.Color.random()
-            )
-            if gif_url:
-                embed.set_image(url=gif_url)
+    async def get_eligible_members(self, guild):
+        role_id = self.PING_ROLES.get(guild.id)
+        members = []
+        if role_id:
+            role = guild.get_role(role_id)
+            members = [m for m in role.members if not m.bot and m.status != discord.Status.offline] if role else []
+        else:
+            members = [m for m in guild.members if not m.bot and m.status != discord.Status.offline]
+        return members if members else [m for m in guild.members if not m.bot]
 
-            await channel.send(embed=embed)
+    async def send_ping_embed(self, channel, guild, member, line, title):
+        embed = discord.Embed(description=f"{member.mention} {line}", color=discord.Color.orange())
+        embed.set_author(name=title, icon_url=guild.icon.url if guild.icon else discord.Embed.Empty)
+        embed.set_footer(text="Made with ❤️")
 
-    @commands.command(name="toggleping", help="Enable/Disable sarcastic pings in this server.")
+        stats = discord.Embed(title="📊 Server Stats", color=discord.Color.blurple())
+        stats.add_field(name="👥 Members", value=guild.member_count, inline=True)
+        stats.add_field(name="🤖 Bots", value=sum(1 for m in guild.members if m.bot), inline=True)
+        stats.add_field(name="💬 Channels", value=len(guild.text_channels), inline=True)
+        stats.add_field(name="🛡️ Roles", value=len(guild.roles), inline=True)
+        stats.add_field(name="🎯 Pinged", value=member.mention, inline=True)
+
+        msg = await channel.send(embeds=[embed, stats])
+        for emoji in ("👀", "😂", "🔥"):
+            await msg.add_reaction(emoji)
+
+    @commands.command(name="toggleping")
     @commands.has_permissions(administrator=True)
-    async def toggle_pinger(self, ctx):
-        if ctx.guild.id in ENABLED_GUILDS:
-            ENABLED_GUILDS.remove(ctx.guild.id)
-            await ctx.send("❌ Sarcastic pings disabled for this server.")
+    async def toggleping_cmd(self, ctx):
+        if ctx.guild.id in self.ENABLED_GUILDS:
+            self.ENABLED_GUILDS.remove(ctx.guild.id)
+            await ctx.send("❌ Sarcastic pings disabled.")
         else:
-            ENABLED_GUILDS.add(ctx.guild.id)
-            await ctx.send("✅ Sarcastic pings enabled for this server.")
+            self.ENABLED_GUILDS.add(ctx.guild.id)
+            await ctx.send("✅ Sarcastic pings enabled! First ping coming up...")
+            members = await self.get_eligible_members(ctx.guild)
+            if members:
+                member = random.choice(members)
+                channel = ctx.guild.get_channel(self.PING_CHANNELS.get(ctx.guild.id)) or ctx.channel
+                await self.send_ping_embed(channel, ctx.guild, member, "Let the sarcasm begin! 😈", "🔥 First Ping")
 
-    @app_commands.command(name="toggleping", description="Enable/Disable sarcastic pings in this server.")
-    async def slash_toggle_pinger(self, interaction: discord.Interaction):
+    @app_commands.command(name="toggleping", description="Enable/Disable sarcastic pings")
+    async def toggleping_slash(self, interaction: discord.Interaction):
         if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message("You need administrator permissions to use this command.", ephemeral=True)
+            await interaction.response.send_message("🚫 Admins only!", ephemeral=True)
             return
-
-        if interaction.guild.id in ENABLED_GUILDS:
-            ENABLED_GUILDS.remove(interaction.guild.id)
-            await interaction.response.send_message("❌ ping chalu nhi hoga kuch to gadbad hai .")
+        if interaction.guild.id in self.ENABLED_GUILDS:
+            self.ENABLED_GUILDS.remove(interaction.guild.id)
+            await interaction.response.send_message("❌ Sarcastic pings disabled.")
         else:
-            ENABLED_GUILDS.add(interaction.guild.id)
-            await interaction.response.send_message("✅ ping chalu ho gya malik")
+            self.ENABLED_GUILDS.add(interaction.guild.id)
+            await interaction.response.send_message("✅ Sarcastic pings enabled! First ping coming up...")
+            members = await self.get_eligible_members(interaction.guild)
+            if members:
+                member = random.choice(members)
+                channel = interaction.guild.get_channel(self.PING_CHANNELS.get(interaction.guild.id)) or interaction.channel
+                await self.send_ping_embed(channel, interaction.guild, member, "Let the sarcasm begin! 😈", "🔥 First Ping")
 
-    @commands.command(name="setpingchannel", help="Set the channel where sarcasm pings should appear.")
+    @commands.command(name="setpingrole")
+    @commands.has_permissions(manage_roles=True)
+    async def setrole_cmd(self, ctx, role: discord.Role):
+        self.PING_ROLES[ctx.guild.id] = role.id
+        await ctx.send(f"✅ Only members with {role.mention} will be pinged.")
+
+    @app_commands.command(name="setpingrole", description="Only ping members with a certain role")
+    async def setrole_slash(self, interaction: discord.Interaction, role: discord.Role):
+        if not interaction.user.guild_permissions.manage_roles:
+            await interaction.response.send_message("🚫 You need Manage Roles permission.", ephemeral=True)
+            return
+        self.PING_ROLES[interaction.guild.id] = role.id
+        await interaction.response.send_message(f"✅ Only members with {role.mention} will be pinged.")
+
+    @commands.command(name="setpingchannel")
     @commands.has_permissions(manage_channels=True)
-    async def set_ping_channel(self, ctx, channel: discord.TextChannel):
-        PING_CHANNELS[ctx.guild.id] = channel.id
-        ENABLED_GUILDS.add(ctx.guild.id)
-        await ctx.send(f"✅ Sarcastic pings will now appear in {channel.mention}")
+    async def setchannel_cmd(self, ctx, channel: discord.TextChannel):
+        self.PING_CHANNELS[ctx.guild.id] = channel.id
+        await ctx.send(f"✅ Pings will now appear in {channel.mention}")
 
-    @app_commands.command(name="setpingchannel", description="Set the channel where sarcasm pings should appear.")
-    async def slash_set_ping_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
+    @app_commands.command(name="setpingchannel", description="Choose which channel should get pings.")
+    @app_commands.describe(channel="Channel where sarcastic pings will be sent")
+    async def setchannel_slash(self, interaction: discord.Interaction, channel: discord.TextChannel):
         if not interaction.user.guild_permissions.manage_channels:
-            await interaction.response.send_message("You need manage channel permissions to use this command.", ephemeral=True)
+            await interaction.response.send_message("🚫 You need Manage Channel permission.", ephemeral=True)
             return
+        self.PING_CHANNELS[interaction.guild.id] = channel.id
+        await interaction.response.send_message(f"✅ Pings will now appear in {channel.mention}")
 
-        PING_CHANNELS[interaction.guild.id] = channel.id
-        ENABLED_GUILDS.add(interaction.guild.id)
-        await interaction.response.send_message(f"✅ Sarcastic pings will now appear in {channel.mention}")
-
-    @commands.command(name="testping", help="Force a test sarcastic ping now.")
+    @commands.command(name="testping")
     @commands.has_permissions(administrator=True)
-    async def test_ping(self, ctx):
-        members = [m for m in ctx.guild.members if not m.bot]
+    async def testping_cmd(self, ctx):
+        members = await self.get_eligible_members(ctx.guild)
         if not members:
-            await ctx.send("⚠ No eligible members found for test ping.")
+            await ctx.send("⚠ No one eligible to ping.")
             return
-
         member = random.choice(members)
-        message = random.choice(self.sarcasm_lines)
-        gif_url = await self.get_random_gif()
+        channel = ctx.guild.get_channel(self.PING_CHANNELS.get(ctx.guild.id)) or ctx.channel
+        await self.send_ping_embed(channel, ctx.guild, member, "wake up, we're testing 😴", "🧪 Test Ping")
 
-        embed = discord.Embed(
-            title="🧪 Test Ping",
-            description=f"{member.mention} {message}",
-            color=discord.Color.random()
-        )
-        if gif_url:
-            embed.set_image(url=gif_url)
-
-        await ctx.send(embed=embed)
-
-    @app_commands.command(name="testping", description="Force a test sarcastic ping now.")
-    async def slash_test_ping(self, interaction: discord.Interaction):
+    @app_commands.command(name="testping", description="Force a sarcastic ping immediately")
+    async def testping_slash(self, interaction: discord.Interaction):
         if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message("You need administrator permissions to use this command.", ephemeral=True)
+            await interaction.response.send_message("🚫 Admins only!", ephemeral=True)
             return
-
-        members = [m for m in interaction.guild.members if not m.bot]
+        members = await self.get_eligible_members(interaction.guild)
         if not members:
-            await interaction.response.send_message("⚠ No eligible members found for test ping.", ephemeral=True)
+            await interaction.response.send_message("⚠ No one eligible to ping.", ephemeral=True)
             return
-
         member = random.choice(members)
-        message = random.choice(self.sarcasm_lines)
-        gif_url = await self.get_random_gif()
-
-        embed = discord.Embed(
-            title="🧪 Test Ping",
-            description=f"{member.mention} {message}",
-            color=discord.Color.random()
-        )
-        if gif_url:
-            embed.set_image(url=gif_url)
-
-        await interaction.response.send_message(embed=embed)
+        channel = interaction.guild.get_channel(self.PING_CHANNELS.get(interaction.guild.id)) or interaction.channel
+        await self.send_ping_embed(channel, interaction.guild, member, "wake up, we're testing 😴", "🧪 Test Ping")
 
 async def setup(bot):
-    await bot.add_cog(RandomPinger(bot))
+    await bot.add_cog(SarcasticPinger(bot))

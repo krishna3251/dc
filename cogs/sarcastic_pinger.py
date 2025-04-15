@@ -4,50 +4,20 @@ from discord.ext import commands, tasks
 from discord import app_commands
 
 class SarcasticPinger(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.PING_CHANNELS = {}     # guild_id: channel_id
+        self.PING_CHANNELS = {}  # guild_id: channel_id
         self.ENABLED_GUILDS = set()
         self.animal_gifs = [
-            "https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif",  # cat
-            "https://media.giphy.com/media/mlvseq9yvZhba/giphy.gif",  # dog
+            "https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif",
+            "https://media.giphy.com/media/mlvseq9yvZhba/giphy.gif",
             "https://media.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif",
             "https://media.giphy.com/media/OmK8lulOMQ9XO/giphy.gif",
             "https://media.giphy.com/media/12HZukMBlutpoQ/giphy.gif"
         ]
         self.sarcasm_lines = [
-            # (same list unchanged for sarcasm_lines)
             "kya chal raha hai bro? 🨨", "tum abhi tak server mein ho? 😏", "kaam dhanda nahi hai kya? 😌",
-            # ... (truncated for brevity)
             "Hello ghosts of the server… 👻 It’s me, your friendly bot!"
-            "kya chal raha hai bro? 🨨", "tum abhi tak server mein ho? 😏", "kaam dhanda nahi hai kya? 😌",
-            "bada hi important aadmi ban gaya tu toh 😎", "tumhare bina ye server adhoora hai... NOT 😂",
-            "bot bhi bored ho gaya dekh ke tumhe 😶", "coding ho gayi khatam ya break par ho abhi bhi? 👀",
-            "tum jaise logon ke wajah se hi memes bante hain 😄", "offline hoke bhi active rehne ka talent chahiye 💀",
-            "ab toh bot bhi ping kar raha hai, samaj ja bro 🤭", "tumse milke server ka load badh gaya hai 💻",
-            "arey waah! hamare celebrity aaye! 😏", "mujhe laga tu busy hai, lekin tu toh chill kar raha 🚒",
-            "tumhara naam har jagah hai... even in my error logs 😬", "kya kar raha hai? Reply de warna bot sad ho jayega 😢",
-            "tumhe ping karne se zyada accha RAM upgrade karna hai 😆", "Hello darkness my old friend... 🕳️",
-            "Iss channel mein toh cobweb bhi bored ho gaya hai 🕸️", "Chat toh itni dead hai ki archaeologists bhi khoj rahe hain 😩",
-            "Lagta hai sab ne typing license cancel karwa liya 💀", "Iss channel mein silence ka subscription free hai kya? 😐",
-            "Ping maar raha hoon… koi toh bol de ‘hi’ nahi toh server ko CPR do 🪠", "Dead server? Nahi bhai, yeh toh extinct hai 💀🦖",
-            "Ye channel last active tha jab dinosaurs jeevit the 🦕", "Kya chal raha hai sab? ...oh wait, kuch bhi nahi 😑",
-            "Lagta hai Discord ne bhi is channel ka notification band kar diya 😭", "Sun raha hai na tu? Ya sirf pfp dekh ke afk ho gaya? 😏",
-            "Aree main toh bas ek bot hoon, par teri online status pe crush ho gaya 💘",
-            "Mujhe laga yahan waise log honge jo 'hi' ka reply dete hain… clearly I was wrong 😔",
-            "Channel dead hai, par tu active ho toh mera system lag hone lagta hai 😳",
-            "Tera naam Discord ho ya Dilcord? Kyunki tu dil mein ghus gaya 😩",
-            "Kya tum emojis ho? Kyunki tumhare bina yeh server dull lagta hai 🚪",
-            "Pura server afk hai, sirf tum online ho... destiny much? 😌",
-            "Aise ignore mat karo, main bot hoon lekin feelings toh hain 🥲",
-            "Channel mein aag lag jaati agar tum thoda aur active hote 🔥",
-            "Bolo na kuch... warna flirting karne lagunga 😈",
-            "Yeh channel itna dead hai ki archaeologists bhi confuse ho jaayein 🙵️",
-            "Bhai yeh desert hai kya? Itni silence toh mummy ke room mein hoti hai 🧟‍♂️",
-            "Lagta hai sabko Thanos ne snap kar diya 😶‍🌫️", "Channel revive karne ke liye black magic mangwana padega kya? 🔮",
-            "Bot hoon, par mujhe bhi tanhayi mehsoos ho rahi hai yahan 😭", "Hello? Is this mic on? Oh wait... nobody’s here anyway 🎤",
-            "Itna dead toh mera pichla relationship bhi nahi tha 💔", "Chat ka CPR shuru kar doon kya? 💉",
-            "Kya koi hai jo emoji bhej ke channel zinda kare? 🙵", "Hello ghosts of the server… 👻 It’s me, your friendly bot!"
         ]
         self.ping_members.start()
 
@@ -100,7 +70,9 @@ class SarcasticPinger(commands.Cog):
         for emoji in ("👀", "😂", "🔥"):
             await msg.add_reaction(emoji)
 
-    @app_commands.command(name="setpingchannel", description="Set this channel for pings")
+    # SLASH COMMANDS BELOW
+
+    @app_commands.command(name="setpingchannel", description="Set this channel for sarcastic pings")
     async def set_ping_channel(self, interaction: discord.Interaction):
         self.PING_CHANNELS[interaction.guild_id] = interaction.channel_id
         await interaction.response.send_message("✅ Ping channel set!", ephemeral=True)
@@ -128,13 +100,16 @@ class SarcasticPinger(commands.Cog):
         await self.send_ping_embed(interaction.channel, guild, member, line, "🔁 Test Ping", gif)
         await interaction.response.send_message("📨 Test ping sent!", ephemeral=True)
 
-    @commands.Cog.listener()
-    async def on_ready(self):
+    async def cog_load(self):
+        self.bot.tree.add_command(self.set_ping_channel)
+        self.bot.tree.add_command(self.toggle_ping)
+        self.bot.tree.add_command(self.test_ping)
+
         try:
             synced = await self.bot.tree.sync()
             print(f"✅ Synced {len(synced)} command(s) for sarcastic pinger.")
         except Exception as e:
             print(f"❌ Failed to sync commands: {e}")
 
-async def setup(bot):
+async def setup(bot: commands.Bot):
     await bot.add_cog(SarcasticPinger(bot))

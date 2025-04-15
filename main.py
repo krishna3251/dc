@@ -8,11 +8,13 @@ import time
 from functools import lru_cache
 from discord.ext import commands
 from dotenv import load_dotenv
+
+load_dotenv()
 from config import DISCORD_TOKEN
 from db_handler import init_db
 
 try:
-    from flask_app import app
+    from flask_app import app  # Optional Flask app
 except ImportError:
     app = None
 
@@ -26,9 +28,6 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.guilds = True
 intents.members = True
-intents.presences = False
-intents.typing = False
-intents.voice_states = any(f.startswith("music") for f in os.listdir("cogs") if f.endswith(".py"))
 
 class OptimizedBot(commands.Bot):
     def __init__(self, *args, **kwargs):
@@ -52,11 +51,7 @@ class OptimizedBot(commands.Bot):
 bot = OptimizedBot(
     command_prefix="lx ",
     intents=intents,
-    help_command=None,
-    chunk_guilds_at_startup=False,
-    member_cache_flags=discord.MemberCacheFlags.none(),
-    max_messages=50,
-    assume_unsync_clock=True,
+    help_command=None
 )
 
 @bot.event
@@ -101,19 +96,16 @@ async def load_extensions():
         cog_path = f"cogs.{file[:-3]}"
         try:
             await bot.load_extension(cog_path)
-            print(f"✅ Loaded cog: {cog_path}")
+            logging.info(f"✅ Loaded cog: {cog_path}")
         except Exception as e:
-            print(f"❌ Failed to load {cog_path}: {e}")
+            logging.error(f"❌ Failed to load {cog_path}: {e}")
 
     priority = [f for f in cog_files if f.startswith(("help", "admin", "core"))]
     rest = [f for f in cog_files if f not in priority]
 
     for file in priority:
         await load_ext(file)
-
     await asyncio.gather(*(load_ext(file) for file in rest))
-
-    print(f"✅ Total Commands Loaded: {[cmd.name for cmd in bot.commands]}")
 
 @bot.command(name="restart")
 @commands.is_owner()

@@ -44,7 +44,7 @@ class RandomPinger(commands.Cog):
             "Kya chal raha hai sab? ...oh wait, kuch bhi nahi 😑"
             "Lagta hai Discord ne bhi is channel ka notification band kar diya 😭"
             "Sun raha hai na tu? Ya sirf pfp dekh ke afk ho gaya? 😏"
-            "Aree main toh bas ek bot hoon, par teri online status pe crush ho gaya 💘
+            "Aree main toh bas ek bot hoon, par teri online status pe crush ho gaya 💘"
             "Mujhe laga yahan waise log honge jo 'hi' ka reply dete hain… clearly I was wrong 😔"
             "Channel dead hai, par tu active ho toh mera system lag hone lagta hai 😳"
             "Tera naam Discord ho ya Dilcord? Kyunki tu dil mein ghus gaya 😩"

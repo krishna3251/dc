@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from config import TOKEN, PREFIX, INTENTS, EXTENSIONS  # updated config usage
-from database import init_app  # use database setup
+from config import TOKEN, PREFIX, INTENTS, EXTENSIONS
+from database import init_app
 
 try:
     from flask import Flask
@@ -55,11 +55,11 @@ bot = OptimizedBot(
 
 @bot.event
 async def on_ready():
-    logging.info(f"✅ Bot is online as {bot.user}")
+    logging.info(f"\u2705 Bot is online as {bot.user}")
     if should_sync_commands():
         try:
             await bot.tree.sync()
-            logging.info("✅ Slash commands synced!")
+            logging.info("\u2705 Slash commands synced!")
         except Exception as e:
             logging.error(f"❌ Slash command sync failed: {e}")
 
@@ -88,18 +88,17 @@ def should_sync_commands():
         return True
 
 async def load_extensions():
-    from database import db  # if needed to init DB
+    from database import db
     cog_files = [f for f in os.listdir("cogs") if f.endswith(".py") and f != "__init__.py"]
 
     async def load_ext(file):
         cog_path = f"cogs.{file[:-3]}"
         try:
             await bot.load_extension(cog_path)
-            logging.info(f"✅ Loaded cog: {cog_path}")
+            logging.info(f"\u2705 Loaded cog: {cog_path}")
         except Exception as e:
             logging.error(f"❌ Failed to load {cog_path}: {e}", exc_info=True)
 
-    # Load priority cogs first
     priority = [f for f in cog_files if f.startswith(("help", "admin", "core", "spotify"))]
     rest = [f for f in cog_files if f not in priority]
 
@@ -108,17 +107,29 @@ async def load_extensions():
 
     await asyncio.gather(*(load_ext(file) for file in rest))
 
-    for file in priority:
-        await load_ext(file)
-    await asyncio.gather(*(load_ext(file) for file in rest))
+    logging.info(f"\u2705 Loaded {len(priority) + len(rest)} extensions.")
 
 @bot.command(name="restart")
 @commands.is_owner()
 async def restart(ctx):
-    await ctx.send("🔄 Restarting...")
+    await ctx.send("\ud83d\udd04 Restarting...")
     logging.info("Restarting bot...")
     bot._config_cache.clear()
     os.execv(sys.executable, ["python"] + sys.argv)
+
+@bot.command(name="reload")
+@commands.is_owner()
+async def reload_cog(ctx, cog: str):
+    try:
+        await bot.reload_extension(f"cogs.{cog}")
+        await ctx.send(f"\ud83d\udd01 Reloaded `{cog}` successfully.")
+    except Exception as e:
+        await ctx.send(f"\u274c Error reloading `{cog}`:\n```{e}```")
+
+@bot.command(name="uptime")
+async def uptime(ctx):
+    uptime = bot.get_uptime()
+    await ctx.send(f"\u23f1\ufe0f Bot uptime: `{int(uptime // 60)} minutes`.")
 
 def run_discord_bot():
     max_retries = 5
@@ -155,6 +166,6 @@ if __name__ == "__main__":
         keep_alive()
         asyncio.run(bot_main())
     except KeyboardInterrupt:
-        logging.info("🛑 Bot shutdown.")
+        logging.info("\ud83d\uded1 Bot shutdown.")
     except Exception as e:
-        logging.error(f"❌ Critical Error: {e}")
+        logging.error(f"\u274c Critical Error: {e}")

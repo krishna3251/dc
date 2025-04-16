@@ -20,9 +20,8 @@ HELP_GIFS = [
 ]
 
 class CategorySelect(discord.ui.Select):
-    def __init__(self, bot, interaction, help_view):
+    def __init__(self, bot, help_view):
         self.bot = bot
-        self.interaction = interaction
         self.help_view = help_view
 
         options = []
@@ -63,13 +62,11 @@ class CategorySelect(discord.ui.Select):
         await interaction.response.edit_message(embed=embed, view=self.help_view)
 
 class HelpView(discord.ui.View):
-    def __init__(self, bot, interaction: discord.Interaction, timeout=60):
+    def __init__(self, bot, timeout=60):
         super().__init__(timeout=timeout)
         self.bot = bot
-        self.interaction = interaction
         self.message = None
-
-        self.select_menu = CategorySelect(bot, interaction, self)
+        self.select_menu = CategorySelect(bot, self)
         self.add_item(self.select_menu)
 
     async def on_timeout(self):
@@ -104,8 +101,9 @@ class Help(commands.Cog):
         embed.set_footer(text="Dropdown active • Auto-deletes after 60s")
         embed.set_image(url=random.choice(HELP_GIFS))
 
-        view = HelpView(self.bot, interaction)
-        msg = await interaction.response.send_message(embed=embed, view=view, ephemeral=False)
+        view = HelpView(self.bot)
+        await interaction.response.defer()
+        await interaction.followup.send(embed=embed, view=view)
         view.message = await interaction.original_response()
 
     @commands.command(name="help", help="📜 Opens an interactive help menu.")
@@ -118,7 +116,7 @@ class Help(commands.Cog):
         embed.set_footer(text="Dropdown active • Auto-deletes after 60s")
         embed.set_image(url=random.choice(HELP_GIFS))
 
-        view = HelpView(self.bot, ctx)
+        view = HelpView(self.bot)
         msg = await ctx.send(embed=embed, view=view)
         view.message = msg
         await asyncio.sleep(60)

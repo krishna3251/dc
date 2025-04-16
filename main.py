@@ -11,27 +11,28 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-import discord
-
-TOKEN = "your-bot-token"
+TOKEN = os.getenv("DISCORD_TOKEN")  # From .env
 PREFIX = "lx"
 INTENTS = discord.Intents.all()
-EXTENSIONS = []  # list of cog names like ["admin", "music"]
 
+# Optional Flask app for keep_alive (e.g., Render, Replit)
 try:
     from flask import Flask
+    from database import init_app  # Ensure you have this
     app = Flask(__name__)
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///bot.db"
     init_app(app)
 except ImportError:
     app = None
 
+# Logging config
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s]: %(message)s",
     handlers=[logging.StreamHandler()]
 )
 
+# Optimized Bot class
 class OptimizedBot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -51,22 +52,25 @@ class OptimizedBot(commands.Bot):
     def get_uptime(self):
         return time.time() - self.start_time
 
+# Bot instance
 bot = OptimizedBot(
     command_prefix=PREFIX,
     intents=INTENTS,
     help_command=None
 )
 
+# When bot is ready
 @bot.event
 async def on_ready():
-    logging.info(f"\u2705 Bot is online as {bot.user}")
+    logging.info(f"✅ Bot is online as {bot.user}")
     if should_sync_commands():
         try:
             await bot.tree.sync()
-            logging.info("\u2705 Slash commands synced!")
+            logging.info("✅ Slash commands synced!")
         except Exception as e:
             logging.error(f"❌ Slash command sync failed: {e}")
 
+# Sync check based on file timestamps
 def should_sync_commands():
     last_sync_file = ".last_sync"
     latest_mod_time = 0
@@ -91,15 +95,16 @@ def should_sync_commands():
     except:
         return True
 
+# Load all cogs from /cogs
 async def load_extensions():
-    from database import db
+    from database import db  # Must exist
     cog_files = [f for f in os.listdir("cogs") if f.endswith(".py") and f != "__init__.py"]
 
     async def load_ext(file):
         cog_path = f"cogs.{file[:-3]}"
         try:
             await bot.load_extension(cog_path)
-            logging.info(f"\u2705 Loaded cog: {cog_path}")
+            logging.info(f"✅ Loaded cog: {cog_path}")
         except Exception as e:
             logging.error(f"❌ Failed to load {cog_path}: {e}", exc_info=True)
 
@@ -110,31 +115,34 @@ async def load_extensions():
         await load_ext(file)
 
     await asyncio.gather(*(load_ext(file) for file in rest))
+    logging.info(f"✅ Loaded {len(priority) + len(rest)} extensions.")
 
-    logging.info(f"\u2705 Loaded {len(priority) + len(rest)} extensions.")
-
+# Restart command
 @bot.command(name="restart")
 @commands.is_owner()
 async def restart(ctx):
-    await ctx.send("\ud83d\udd04 Restarting...")
+    await ctx.send("🔄 Restarting...")
     logging.info("Restarting bot...")
     bot._config_cache.clear()
     os.execv(sys.executable, ["python"] + sys.argv)
 
+# Reload a cog
 @bot.command(name="reload")
 @commands.is_owner()
 async def reload_cog(ctx, cog: str):
     try:
         await bot.reload_extension(f"cogs.{cog}")
-        await ctx.send(f"\ud83d\udd01 Reloaded `{cog}` successfully.")
+        await ctx.send(f"🔁 Reloaded `{cog}` successfully.")
     except Exception as e:
-        await ctx.send(f"\u274c Error reloading `{cog}`:\n```{e}```")
+        await ctx.send(f"❌ Error reloading `{cog}`:\n```{e}```")
 
+# Uptime command
 @bot.command(name="uptime")
 async def uptime(ctx):
     uptime = bot.get_uptime()
-    await ctx.send(f"\u23f1\ufe0f Bot uptime: `{int(uptime // 60)} minutes`.")
+    await ctx.send(f"⏱️ Bot uptime: `{int(uptime // 60)} minutes`.")
 
+# Run the bot with retries
 def run_discord_bot():
     max_retries = 5
     for attempt in range(1, max_retries + 1):
@@ -149,11 +157,13 @@ def run_discord_bot():
             logging.error(f"Unexpected error: {e}")
             break
 
+# Main async bot runner
 async def bot_main():
     async with bot:
         await load_extensions()
         await bot.start(TOKEN)
 
+# For use with gunicorn/server environments
 def start_bot_thread():
     bot_thread = threading.Thread(target=run_discord_bot, name="DiscordBot")
     bot_thread.daemon = True
@@ -164,12 +174,13 @@ is_gunicorn = 'gunicorn' in sys.modules
 if __name__ != "__main__" and is_gunicorn:
     start_bot_thread()
 
+# Local run with optional keep_alive
 if __name__ == "__main__":
     try:
         from keep_alive import keep_alive
         keep_alive()
         asyncio.run(bot_main())
     except KeyboardInterrupt:
-        logging.info("\ud83d\uded1 Bot shutdown.")
+        logging.info("🛑 Bot shutdown.")
     except Exception as e:
-        logging.error(f"\u274c Critical Error: {e}")
+        logging.error(f"❌ Critical Error: {e}")

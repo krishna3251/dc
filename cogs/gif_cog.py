@@ -1,502 +1,339 @@
 import discord
 from discord.ext import commands
-from discord import app_commands
-import asyncio
-from typing import Dict, List, Optional, Any, Union
-import datetime
+import random
+import aiohttp
+import os
+from typing import Optional
 
-class HelpDropdown(discord.ui.Select):
-    """Dropdown menu for the help command"""
-    
-    def __init__(self, help_command, categories: Dict[str, dict]):
-        self.help_command = help_command
-        self.categories = categories
-        
-        # Create options for each category
-        options = []
-        for category, data in categories.items():
-            if category == "No Category":
-                emoji = "📋"
-            else:
-                # Choose emoji based on category name
-                emoji_map = {
-                    "Moderation": "🛡️",
-                    "Server": "🌐",
-                    "Utility": "🔧",
-                    "GIF": "🎬",
-                    "Fun": "🎮",
-                    "Info": "ℹ️",
-                    "Channel": "📺",
-                    "Voice": "🔊",
-                    "Anti-Spam": "🚫",
-                    "Logging": "📝",
-                    "Stats": "📊",
-                    "Welcome": "👋",
-                    "Channels": "🏠",
-                    "Backup": "💾",
-                    "Roles": "👑",
-                    "Activity": "🏆",
-                    "Custom": "⚙️",
-                    "Filter": "🚫",
-                    "Search": "🔍",
-                    "Spotify": "🎵",
-                    "Music": "🎵"
-                }
-                emoji = emoji_map.get(category, "📦")
-            
-            # Calculate total command count (prefix + slash)
-            prefix_cmds = data.get("prefix", [])
-            slash_cmds = data.get("slash", [])
-            cmd_count = len(prefix_cmds) + len(slash_cmds)
-            
-            options.append(
-                discord.SelectOption(
-                    label=category,
-                    description=f"{cmd_count} command{'s' if cmd_count != 1 else ''}",
-                    emoji=emoji,
-                    value=category
-                )
-            )
-        
-        # Add default home option
-        options.insert(0, discord.SelectOption(
-            label="Home",
-            description="Main help page",
-            emoji="🏠",
-            value="home"
-        ))
-        
-        super().__init__(
-            placeholder="Select a category...",
-            min_values=1,
-            max_values=1,
-            options=options
-        )
-    
-    async def callback(self, interaction: discord.Interaction):
-        """Handle dropdown selection"""
-        selected_value = self.values[0]
-        
-        if selected_value == "home":
-            # Show main help page
-            await interaction.response.edit_message(embed=self.help_command.get_main_help_embed())
-        else:
-            # Show commands for the selected category
-            await interaction.response.edit_message(embed=self.help_command.get_category_embed(selected_value))
-
-class HelpView(discord.ui.View):
-    """View containing the help dropdown"""
-    
-    def __init__(self, help_command, categories, *, timeout=180):
-        super().__init__(timeout=timeout)
-        self.add_item(HelpDropdown(help_command, categories))
-
-class CommandTypeView(discord.ui.View):
-    """View for switching between prefix and slash commands"""
-    
-    def __init__(self, help_command, category, *, timeout=180):
-        super().__init__(timeout=timeout)
-        self.help_command = help_command
-        self.category = category
-        self.command_type = "all"  # Default to showing all commands
-    
-    @discord.ui.button(label="All Commands", style=discord.ButtonStyle.primary)
-    async def all_commands(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.command_type = "all"
-        await interaction.response.edit_message(embed=self.help_command.get_category_embed(self.category, self.command_type))
-    
-    @discord.ui.button(label="Prefix Commands", style=discord.ButtonStyle.secondary)
-    async def prefix_commands(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.command_type = "prefix"
-        await interaction.response.edit_message(embed=self.help_command.get_category_embed(self.category, self.command_type))
-    
-    @discord.ui.button(label="Slash Commands", style=discord.ButtonStyle.secondary)
-    async def slash_commands(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.command_type = "slash"
-        await interaction.response.edit_message(embed=self.help_command.get_category_embed(self.category, self.command_type))
-    
-    @discord.ui.button(label="Back to Categories", style=discord.ButtonStyle.danger)
-    async def back_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # Go back to category selection
-        embed = self.help_command.get_main_help_embed()
-        view = HelpView(self.help_command, self.help_command.get_all_categories())
-        await interaction.response.edit_message(embed=embed, view=view)
-
-class HelpCog(commands.Cog):
-    """Enhanced help command with interactive dropdown menus and slash commands support"""
+class GifCog(commands.Cog):
+    """Send various GIFs and animated reactions"""
     
     def __init__(self, bot):
         self.bot = bot
-        self.original_help_command = bot.help_command
-        bot.help_command = None  # Remove the default help command
+        self.tenor_api_key = os.getenv("TENOR_API_KEY", "")
+        self.giphy_api_key = os.getenv("GIPHY_API_KEY", "")
         
-        # Bot theme color
-        self.embed_color = 0x3a9efa
+        # Fallback GIFs in case API key is not provided or API request fails
+        self.fallback_gifs = {
+            "hug": [
+                "https://media.giphy.com/media/od5H3PmEG5EVq/giphy.gif",
+                "https://media.giphy.com/media/lrr9rHuoJOE0w/giphy.gif",
+                "https://media.giphy.com/media/ZQN9jsRWp1M76/giphy.gif"
+            ],
+            "slap": [
+                "https://media.giphy.com/media/Zau0yrl17uzdK/giphy.gif",
+                "https://media.giphy.com/media/xUO4t2gkWBxDi/giphy.gif",
+                "https://media.giphy.com/media/uqSU9IEYEKAbS/giphy.gif"
+            ],
+            "kiss": [
+                "https://media.giphy.com/media/G3va31oEEnIkM/giphy.gif",
+                "https://media.giphy.com/media/bGm9FuBCGg4SY/giphy.gif",
+                "https://media.giphy.com/media/hnNyVPIXgLdle/giphy.gif"
+            ],
+            "pat": [
+                "https://media.giphy.com/media/ARSp9T7wwxNcs/giphy.gif",
+                "https://media.giphy.com/media/109ltuoSQT212w/giphy.gif",
+                "https://media.giphy.com/media/L2z7dnOduqEow/giphy.gif"
+            ],
+            "poke": [
+                "https://media.giphy.com/media/WvVzZ9mCyMjsc/giphy.gif",
+                "https://media.giphy.com/media/tFK6urY1CfQiI/giphy.gif",
+                "https://media.giphy.com/media/pWd3gD577gOqs/giphy.gif"
+            ],
+            "dance": [
+                "https://media.giphy.com/media/5xaOcLGvzHxDKjufnLW/giphy.gif",
+                "https://media.giphy.com/media/l3q2Hy66w1hpDSWUE/giphy.gif",
+                "https://media.giphy.com/media/l4Ep3mmmj7Bw3adWw/giphy.gif"
+            ],
+            "cry": [
+                "https://media.giphy.com/media/L95W4wv8nnb9K/giphy.gif",
+                "https://media.giphy.com/media/OPU6wzx8JrHna/giphy.gif",
+                "https://media.giphy.com/media/d2lcHJTG5Tscg/giphy.gif"
+            ],
+            "laugh": [
+                "https://media.giphy.com/media/wWue0rCDOphOE/giphy.gif",
+                "https://media.giphy.com/media/3o7TKMt1VVNkHV2WaI/giphy.gif",
+                "https://media.giphy.com/media/10jiIZ5AxZvpHW/giphy.gif"
+            ],
+            "facepalm": [
+                "https://media.giphy.com/media/3og0INyCmHlNylks9O/giphy.gif",
+                "https://media.giphy.com/media/6yRVg0HWzgS88/giphy.gif",
+                "https://media.giphy.com/media/tnYri4n2Frnig/giphy.gif"
+            ],
+            "highfive": [
+                "https://media.giphy.com/media/3oEjHV0z8S7WM4MwnK/giphy.gif",
+                "https://media.giphy.com/media/Qwi6fEcn2JJeg/giphy.gif",
+                "https://media.giphy.com/media/HX3lSnGXZnaWk/giphy.gif"
+            ]
+        }
         
-        # Command emojis
-        self.command_emojis = {
-            "lock": "🔒",
-            "unlock": "🔓",
-            "ban": "🔨",
-            "kick": "👢",
-            "mute": "🔇",
-            "unmute": "🔊",
-            "purge": "🧹",
-            "warn": "⚠️",
-            "slowmode": "🕒",
-            "ping": "📶",
-            "pinginfo": "📶",
-            "serverinfo": "📋",
-            "userinfo": "👤",
-            "avatar": "🖼️",
-            "invite": "📩",
-            "search": "🔍",
-            "hug": "🤗",
-            "slap": "👋",
-            "kiss": "💋",
-            "dance": "💃",
-            "gif": "🎬",
-            "spotify": "🎵",
-            "track": "🎵",
-            "album": "💿",
-            "artist": "🎤",
-            "playlist": "📜",
-            "recommend": "👍",
-            "bothelp": "❓",
-            "stats": "📊",
-            "user": "👤",
-            "server": "🌐",
-            "roles": "👑"
+        # Message templates for each action
+        self.messages = {
+            "hug": [
+                "{user} gives {target} a big warm hug!",
+                "{user} hugs {target} tightly!",
+                "{user} wraps their arms around {target} in a comforting embrace!",
+                "A wild {user} appears and hugs {target}!"
+            ],
+            "slap": [
+                "{user} slaps {target}! Ouch!",
+                "{user} gives {target} a reality check with a slap!",
+                "{target} feels the wrath of {user}'s slap!",
+                "{user} slaps {target} across the face!"
+            ],
+            "kiss": [
+                "{user} gives {target} a sweet kiss!",
+                "{user} plants a tender kiss on {target}!",
+                "{user} and {target} share a romantic moment!",
+                "{user} surprises {target} with a kiss!"
+            ],
+            "pat": [
+                "{user} gently pats {target} on the head!",
+                "{user} gives {target} comforting pats!",
+                "{user} pats {target} for being good!",
+                "{target} receives headpats from {user}!"
+            ],
+            "poke": [
+                "{user} pokes {target}! Boop!",
+                "{user} pokes {target} to get their attention!",
+                "{user} can't resist poking {target}!",
+                "{target} gets a surprise poke from {user}!"
+            ],
+            "dance": [
+                "{user} busts out some moves with {target}!",
+                "{user} and {target} hit the dance floor!",
+                "{user} shows off their dancing skills to {target}!",
+                "Dance battle between {user} and {target}!"
+            ],
+            "cry": [
+                "{user} cries uncontrollably!",
+                "{user} bursts into tears!",
+                "{user} can't hold back the waterworks!",
+                "Someone get {user} some tissues!"
+            ],
+            "laugh": [
+                "{user} can't stop laughing!",
+                "{user} laughs hysterically!",
+                "{user} is in stitches!",
+                "{user} laughs so hard they might pass out!"
+            ],
+            "facepalm": [
+                "{user} facepalms at {target}'s antics!",
+                "{user} can't believe what {target} just did!",
+                "{user} is disappointed in {target}!",
+                "{user} questions {target}'s life choices with a facepalm!"
+            ],
+            "highfive": [
+                "{user} gives {target} an epic high five!",
+                "{user} and {target} celebrate with a high five!",
+                "{user} high fives {target}! That sounded like it hurt!",
+                "{target} receives a powerful high five from {user}!"
+            ]
         }
     
-    def cog_unload(self):
-        """Reset the original help command when cog is unloaded"""
-        self.bot.help_command = self.original_help_command
-    
-    @commands.command(name="help")
-    async def help_command(self, ctx, *, command_name: Optional[str] = None):
-        """Shows help for commands and categories"""
-        if command_name:
-            # Show help for a specific command
-            await self.show_command_help(ctx, command_name)
-        else:
-            # Show main help menu with dropdown
-            await self.show_help_menu(ctx)
-    
-    @app_commands.command(name="help", description="Shows help for all bot commands")
-    @app_commands.describe(command_name="Specific command to get help for")
-    async def help_slash(self, interaction: discord.Interaction, command_name: Optional[str] = None):
-        """Slash command version of help"""
-        ctx = await self.bot.get_context(interaction)
-        
-        if command_name:
-            await self.show_command_help(ctx, command_name, interaction=interaction)
-        else:
-            await self.show_help_menu(ctx, interaction=interaction)
-    
-    def get_all_categories(self) -> Dict[str, dict]:
-        """Get all command categories with both prefix and slash commands"""
-        categories = {}
-        
-        # Gather prefix commands
-        for command in self.bot.commands:
-            if command.hidden:
-                continue
-                
-            cog_name = command.cog_name or "No Category"
-            
-            if cog_name not in categories:
-                categories[cog_name] = {"prefix": [], "slash": []}
-                
-            categories[cog_name]["prefix"].append(command)
-        
-        # Gather slash commands
-        for command in self.bot.tree.get_commands():
-            # Determine category based on command group or module
-            cog_name = getattr(command, "cog_name", None)
-            if not cog_name and hasattr(command, "module"):
-                # Try to extract cog name from module
-                module_parts = command.module.split(".")
-                for part in module_parts:
-                    if part.lower().endswith("cog"):
-                        cog_name = part.replace("_", " ").title()
-                        break
-            
-            cog_name = cog_name or "No Category"
-            
-            if cog_name not in categories:
-                categories[cog_name] = {"prefix": [], "slash": []}
-                
-            categories[cog_name]["slash"].append(command)
-        
-        return categories
-    
-    async def show_help_menu(self, ctx, interaction: Optional[discord.Interaction] = None):
-        """Display the main help menu with dropdown"""
-        # Get all commands and organize them by category
-        categories = self.get_all_categories()
-        
-        # Create the main help embed
-        embed = self.get_main_help_embed()
-        
-        # Create and send the view with the dropdown
-        view = HelpView(self, categories)
-        
-        if interaction:
-            if interaction.response.is_done():
-                await interaction.followup.send(embed=embed, view=view)
-            else:
-                await interaction.response.send_message(embed=embed, view=view)
-        else:
-            await ctx.send(embed=embed, view=view)
-    
-    async def show_command_help(self, ctx, command_name: str, interaction: Optional[discord.Interaction] = None):
-        """Show help for a specific command"""
-        # First try to find a prefix command
-        command = self.bot.get_command(command_name)
-        is_slash = False
-        
-        if not command:
-            # Try to find a slash command
-            for cmd in self.bot.tree.get_commands():
-                if cmd.name == command_name:
-                    command = cmd
-                    is_slash = True
-                    break
-        
-        if not command:
-            message = f"Command `{command_name}` not found."
-            if interaction:
-                if interaction.response.is_done():
-                    await interaction.followup.send(message)
-                else:
-                    await interaction.response.send_message(message)
-            else:
-                await ctx.send(message)
-            return
-        
-        # For prefix commands, check if user can run it
-        if not is_slash and hasattr(command, "can_run"):
+    async def fetch_gif(self, action):
+        """Fetch a random GIF for the specified action"""
+        # Try to use Tenor API first if key is available
+        if self.tenor_api_key:
             try:
-                if not await command.can_run(ctx):
-                    message = f"You don't have permission to use `{command_name}`."
-                    if interaction:
-                        if interaction.response.is_done():
-                            await interaction.followup.send(message)
-                        else:
-                            await interaction.response.send_message(message)
-                    else:
-                        await ctx.send(message)
-                    return
+                async with aiohttp.ClientSession() as session:
+                    search_term = f"anime {action}"
+                    url = f"https://tenor.googleapis.com/v2/search?q={search_term}&key={self.tenor_api_key}&limit=10&media_filter=gif"
+                    
+                    async with session.get(url) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            if data["results"]:
+                                return data["results"][random.randint(0, len(data["results"])-1)]["media_formats"]["gif"]["url"]
             except Exception:
-                # If can_run raises an exception, we'll just show the help anyway
                 pass
         
-        # Create an embed for the command
-        emoji = self.get_command_emoji(command.name)
-        title = f"{emoji} {'Slash' if is_slash else 'Prefix'} Command: {command.name}"
+        # Try GIPHY API as fallback if key is available
+        if self.giphy_api_key:
+            try:
+                async with aiohttp.ClientSession() as session:
+                    search_term = f"anime {action}"
+                    url = f"https://api.giphy.com/v1/gifs/search?api_key={self.giphy_api_key}&q={search_term}&limit=10"
+                    
+                    async with session.get(url) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            if data["data"]:
+                                return data["data"][random.randint(0, len(data["data"])-1)]["images"]["original"]["url"]
+            except Exception:
+                pass
         
-        # Get description
-        if is_slash:
-            description = command.description or "No description available."
-        else:
-            description = command.help or "No description available."
+        # Use fallback GIFs if both API requests fail or no keys are provided
+        return random.choice(self.fallback_gifs.get(action, ["https://media.giphy.com/media/3o7TKuFYevgE2b6Mx2/giphy.gif"]))
+    
+    def create_action_embed(self, action, user, target, gif_url):
+        """Create an embed for the action"""
+        # Select a random message template
+        message_templates = self.messages.get(action, ["{user} does something to {target}!"])
+        message = random.choice(message_templates).format(user=user.display_name, target=target.display_name if target else "themselves")
         
+        # Create the embed
         embed = discord.Embed(
-            title=title,
-            description=description,
-            color=self.embed_color
+            title=action.capitalize(),
+            description=message,
+            color=0x3a9efa
         )
+        embed.set_image(url=gif_url)
+        embed.set_footer(text="React with your own GIFs!")
         
-        # Add usage information
-        if is_slash:
-            usage = f"/{command.name}"
-            if hasattr(command, "parameters") and command.parameters:
-                params = []
-                for param in command.parameters:
-                    if param.required:
-                        params.append(f"<{param.name}>")
-                    else:
-                        params.append(f"[{param.name}]")
-                if params:
-                    usage += " " + " ".join(params)
+        return embed
+    
+    # Generic action command methods
+    async def perform_action(self, ctx, action, target=None):
+        """Common method for performing any GIF action"""
+        if target is None and action not in ["cry", "laugh"]:
+            await ctx.send("You need to specify a target for this action!")
+            return
             
-            embed.add_field(name="Usage", value=f"`{usage}`", inline=False)
-        else:
-            signature = self.get_command_signature(command)
-            embed.add_field(name="Usage", value=f"`{ctx.prefix}{command.name} {signature}`", inline=False)
-        
-        # Add aliases for prefix commands
-        if not is_slash and hasattr(command, "aliases") and command.aliases:
-            aliases = ", ".join(f"`{ctx.prefix}{alias}`" for alias in command.aliases)
-            embed.add_field(name="Aliases", value=aliases, inline=False)
-        
-        # Add cooldown information for prefix commands
-        if not is_slash and hasattr(command, "_buckets") and command._buckets and command._buckets._cooldown:
-            cooldown = command._buckets._cooldown
-            embed.add_field(
-                name="Cooldown",
-                value=f"{cooldown.rate} use{'s' if cooldown.rate != 1 else ''} every {cooldown.per:.0f} seconds",
-                inline=False
-            )
-        
-        # Add subcommands for prefix commands if any
-        if not is_slash and hasattr(command, "commands") and command.commands:
-            subcommands = ", ".join(f"`{ctx.prefix}{command.name} {subcommand.name}`" for subcommand in command.commands)
-            if subcommands:
-                embed.add_field(name="Subcommands", value=subcommands, inline=False)
-        
-        # Add subcommands for slash commands if any
-        if is_slash and hasattr(command, "options"):
-            subcommands = []
-            for option in command.options:
-                if option.type == discord.AppCommandOptionType.subcommand:
-                    subcommands.append(f"`/{command.name} {option.name}`")
+        async with ctx.typing():
+            # Fetch a GIF
+            gif_url = await self.fetch_gif(action)
             
-            if subcommands:
-                embed.add_field(name="Subcommands", value=", ".join(subcommands), inline=False)
-        
-        # Add cog/category information
-        cog_name = getattr(command, "cog_name", None)
-        if cog_name:
-            embed.set_footer(text=f"Category: {cog_name}")
-        
-        # Send the embed
-        if interaction:
-            if interaction.response.is_done():
-                await interaction.followup.send(embed=embed)
-            else:
-                await interaction.response.send_message(embed=embed)
-        else:
+            # Create and send the embed
+            embed = self.create_action_embed(action, ctx.author, target, gif_url)
             await ctx.send(embed=embed)
     
-    def get_main_help_embed(self) -> discord.Embed:
-        """Create the main help embed"""
+    # Define commands for each action
+    @commands.command(name="hug")
+    async def hug(self, ctx, *, target: discord.Member = None):
+        """Give someone a hug!"""
+        if target is None:
+            target = ctx.author
+        await self.perform_action(ctx, "hug", target)
+    
+    @commands.command(name="slap")
+    async def slap(self, ctx, *, target: discord.Member = None):
+        """Slap someone!"""
+        if target is None:
+            target = ctx.author
+        await self.perform_action(ctx, "slap", target)
+    
+    @commands.command(name="kiss")
+    async def kiss(self, ctx, *, target: discord.Member = None):
+        """Kiss someone!"""
+        if target is None:
+            target = ctx.author
+        await self.perform_action(ctx, "kiss", target)
+    
+    @commands.command(name="pat")
+    async def pat(self, ctx, *, target: discord.Member = None):
+        """Pat someone on the head!"""
+        if target is None:
+            target = ctx.author
+        await self.perform_action(ctx, "pat", target)
+    
+    @commands.command(name="poke")
+    async def poke(self, ctx, *, target: discord.Member = None):
+        """Poke someone!"""
+        if target is None:
+            target = ctx.author
+        await self.perform_action(ctx, "poke", target)
+    
+    @commands.command(name="dance")
+    async def dance(self, ctx, *, target: discord.Member = None):
+        """Dance with someone or by yourself!"""
+        await self.perform_action(ctx, "dance", target or ctx.author)
+    
+    @commands.command(name="cry")
+    async def cry(self, ctx):
+        """Show that you're crying"""
+        await self.perform_action(ctx, "cry", ctx.author)
+    
+    @commands.command(name="laugh")
+    async def laugh(self, ctx):
+        """Show that you're laughing"""
+        await self.perform_action(ctx, "laugh", ctx.author)
+    
+    @commands.command(name="facepalm")
+    async def facepalm(self, ctx, *, target: discord.Member = None):
+        """Facepalm at someone's actions"""
+        if target is None:
+            target = ctx.author
+        await self.perform_action(ctx, "facepalm", target)
+    
+    @commands.command(name="highfive")
+    async def highfive(self, ctx, *, target: discord.Member = None):
+        """Give someone a high five!"""
+        if target is None:
+            target = ctx.author
+        await self.perform_action(ctx, "highfive", target)
+    
+    @commands.command(name="gif")
+    async def gif(self, ctx, *, search_term: str):
+        """Search for a GIF"""
+        async with ctx.typing():
+            gif_url = None
+            
+            # Try Tenor API first
+            if self.tenor_api_key:
+                try:
+                    async with aiohttp.ClientSession() as session:
+                        url = f"https://tenor.googleapis.com/v2/search?q={search_term}&key={self.tenor_api_key}&limit=20&media_filter=gif"
+                        
+                        async with session.get(url) as response:
+                            if response.status == 200:
+                                data = await response.json()
+                                if data["results"]:
+                                    gif_url = data["results"][random.randint(0, len(data["results"])-1)]["media_formats"]["gif"]["url"]
+                except Exception:
+                    pass
+            
+            # Try GIPHY API as fallback
+            if not gif_url and self.giphy_api_key:
+                try:
+                    async with aiohttp.ClientSession() as session:
+                        url = f"https://api.giphy.com/v1/gifs/search?api_key={self.giphy_api_key}&q={search_term}&limit=20"
+                        
+                        async with session.get(url) as response:
+                            if response.status == 200:
+                                data = await response.json()
+                                if data["data"]:
+                                    gif_url = data["data"][random.randint(0, len(data["data"])-1)]["images"]["original"]["url"]
+                except Exception:
+                    pass
+            
+            if gif_url:
+                embed = discord.Embed(
+                    title=f"GIF: {search_term}",
+                    color=0x3a9efa
+                )
+                embed.set_image(url=gif_url)
+                embed.set_footer(text=f"Requested by {ctx.author.display_name}")
+                
+                await ctx.send(embed=embed)
+            else:
+                await ctx.send(f"Couldn't find a GIF for '{search_term}'. Try a different search term.")
+    
+    @commands.command(name="gifhelp")
+    async def gifhelp(self, ctx):
+        """Show available GIF commands"""
         embed = discord.Embed(
-            title=f"{self.bot.user.name} Help",
-            description=(
-                f"Use the dropdown menu below to navigate through command categories.\n\n"
-                f"• You can use both **prefix commands** (`{self.bot.command_prefix}command`) and **slash commands** (`/command`)\n"
-                f"• For detailed help: `{self.bot.command_prefix}help [command]` or `/help command`\n"
-                f"• Example: `{self.bot.command_prefix}help ping` or `/help ping`\n\n"
-                f"**Key Features:**\n"
-                f"• Moderation commands to manage your server\n"
-                f"• Anti-spam protection to keep your channels clean\n"
-                f"• Logging system to track server events\n"
-                f"• Fun commands and GIFs for entertainment\n"
-                f"• Music integration with Spotify\n"
-                f"• Google Search and image search\n"
-                f"• And much more!"
-            ),
-            color=self.embed_color,
-            timestamp=datetime.datetime.utcnow()
+            title="🎬 GIF Commands",
+            description="Express yourself with animated GIFs!",
+            color=0x3a9efa
         )
         
-        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
-        embed.set_footer(text=f"Select a category from the dropdown menu • Version {getattr(self.bot, 'version', '2.0.0')}")
+        # Action commands
+        actions = ["hug", "slap", "kiss", "pat", "poke", "dance", "cry", "laugh", "facepalm", "highfive"]
+        action_commands = "\n".join([f"**{ctx.prefix}{action} [@user]** - {action.capitalize()} someone!" for action in actions])
         
-        return embed
-    
-    def get_category_embed(self, category: str, command_type: str = "all") -> discord.Embed:
-        """Create an embed for a specific command category
+        embed.add_field(name="Action GIFs", value=action_commands, inline=False)
         
-        Parameters:
-        -----------
-        category: str
-            The category name
-        command_type: str
-            Which commands to show: "all", "prefix", or "slash"
-        """
-        # Get all categories
-        all_categories = self.get_all_categories()
-        
-        # Get commands in the category
-        if category not in all_categories:
-            return discord.Embed(
-                title="Category Not Found",
-                description=f"Category `{category}` not found.",
-                color=discord.Color.red()
-            )
-        
-        category_data = all_categories[category]
-        prefix_commands = category_data["prefix"]
-        slash_commands = category_data["slash"]
-        
-        # Create embed
-        embed = discord.Embed(
-            title=f"{category} Commands",
-            description=f"Here are the {'prefix and slash' if command_type == 'all' else command_type} commands in the {category} category:",
-            color=self.embed_color,
-            timestamp=datetime.datetime.utcnow()
+        # Search command
+        embed.add_field(
+            name="GIF Search",
+            value=f"**{ctx.prefix}gif [search term]** - Search for a GIF with the given term",
+            inline=False
         )
         
-        # Add command fields based on command_type
-        if command_type in ["all", "prefix"] and prefix_commands:
-            embed.add_field(
-                name="📝 Prefix Commands",
-                value="These commands can be used with the prefix `" + str(self.bot.command_prefix) + "`",
-                inline=False
-            )
-            
-            for command in sorted(prefix_commands, key=lambda x: x.name):
-                emoji = self.get_command_emoji(command.name)
-                name = f"{emoji} {command.name}"
-                
-                # Get brief description or the first line of the full help
-                description = command.brief or (command.help.split("\n")[0] if command.help else "No description")
-                
-                embed.add_field(name=name, value=description, inline=False)
+        embed.set_footer(text="Most commands can target another user or yourself!")
         
-        if command_type in ["all", "slash"] and slash_commands:
-            embed.add_field(
-                name="/ Slash Commands",
-                value="These commands can be used with Discord's slash command interface",
-                inline=False
-            )
-            
-            for command in sorted(slash_commands, key=lambda x: x.name):
-                emoji = self.get_command_emoji(command.name)
-                name = f"{emoji} {command.name}"
-                
-                # Get description
-                description = command.description or "No description available."
-                
-                embed.add_field(name=name, value=description, inline=False)
-        
-        if (command_type in ["all", "prefix"] and not prefix_commands) and (command_type in ["all", "slash"] and not slash_commands):
-            embed.add_field(name="No Commands", value="This category has no available commands.")
-        elif command_type == "prefix" and not prefix_commands:
-            embed.add_field(name="No Prefix Commands", value="This category has no prefix commands.")
-        elif command_type == "slash" and not slash_commands:
-            embed.add_field(name="No Slash Commands", value="This category has no slash commands.")
-        
-        # Set footer with command type info
-        if command_type == "all":
-            footer_text = "Showing all commands • "
-        elif command_type == "prefix":
-            footer_text = f"Showing only prefix commands ({self.bot.command_prefix}) • "
-        else:  # slash
-            footer_text = "Showing only slash commands (/) • "
-            
-        embed.set_footer(text=footer_text + f"Use {self.bot.command_prefix}help [command] for more details")
-        
-        return embed
-    
-    def get_command_signature(self, command: commands.Command) -> str:
-        """Get the command signature (parameters)"""
-        if not command.signature:
-            return ""
-        
-        return command.signature
-    
-    def get_command_emoji(self, command_name: str) -> str:
-        """Get an emoji for a command"""
-        return self.command_emojis.get(command_name.lower(), "🔹")
+        await ctx.send(embed=embed)
 
 async def setup(bot):
-    # Add the cog
-    help_cog = HelpCog(bot)
-    await bot.add_cog(help_cog)
-    
-    # Register slash commands
-    bot.tree.add_command(help_cog.help_slash)
+    await bot.add_cog(GifCog(bot))

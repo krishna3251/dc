@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import asyncio
+import random
 
 CATEGORY_EMOJIS = {
     "Music": "🎵",
@@ -9,9 +10,14 @@ CATEGORY_EMOJIS = {
     "Fun": "🎉",
     "Utility": "🧰",
     "General": "📌"
-    # Add more if your cog names differ
 }
 
+HELP_GIFS = [
+    "https://media.tenor.com/5LWyJ6I_8KIAAAAd/xtreme-bot-help.gif",
+    "https://media.tenor.com/Tz_GALR2e-QAAAAC/discord-help.gif",
+    "https://media.tenor.com/OWU8NpyjTksAAAAC/bot-help-help.gif",
+    "https://media.tenor.com/8QzhY8J8RjcAAAAC/help-command-discord.gif"
+]
 
 class CategorySelect(discord.ui.Select):
     def __init__(self, bot, interaction, help_view):
@@ -21,7 +27,7 @@ class CategorySelect(discord.ui.Select):
 
         options = []
         for cog_name, cog in bot.cogs.items():
-            if cog_name.startswith("Help"):
+            if cog_name.lower().startswith("help"):
                 continue
             emoji = CATEGORY_EMOJIS.get(cog_name, "📁")
             options.append(discord.SelectOption(
@@ -56,7 +62,6 @@ class CategorySelect(discord.ui.Select):
         embed.set_footer(text="🔙 Use the button below to return • Auto-deletes after 60s of inactivity.")
         await interaction.response.edit_message(embed=embed, view=self.help_view)
 
-
 class HelpView(discord.ui.View):
     def __init__(self, bot, interaction: discord.Interaction, timeout=60):
         super().__init__(timeout=timeout)
@@ -82,10 +87,10 @@ class HelpView(discord.ui.View):
             color=discord.Color.purple()
         )
         embed.set_footer(text="Dropdown active • Auto-deletes after 60s")
+        embed.set_image(url=random.choice(HELP_GIFS))
         await interaction.response.edit_message(embed=embed, view=self)
 
-
-class HelpCog(commands.Cog):
+class Help(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -97,12 +102,12 @@ class HelpCog(commands.Cog):
             color=discord.Color.purple()
         )
         embed.set_footer(text="Dropdown active • Auto-deletes after 60s")
+        embed.set_image(url=random.choice(HELP_GIFS))
 
         view = HelpView(self.bot, interaction)
         msg = await interaction.response.send_message(embed=embed, view=view, ephemeral=False)
         view.message = await interaction.original_response()
 
-    # Optional legacy prefix command
     @commands.command(name="help", help="📜 Opens an interactive help menu.")
     async def help_prefix(self, ctx):
         embed = discord.Embed(
@@ -111,6 +116,7 @@ class HelpCog(commands.Cog):
             color=discord.Color.purple()
         )
         embed.set_footer(text="Dropdown active • Auto-deletes after 60s")
+        embed.set_image(url=random.choice(HELP_GIFS))
 
         view = HelpView(self.bot, ctx)
         msg = await ctx.send(embed=embed, view=view)
@@ -129,6 +135,5 @@ class HelpCog(commands.Cog):
         except Exception as e:
             print(f"❌ Failed to sync slash commands: {e}")
 
-
 async def setup(bot):
-    await bot.add_cog(HelpCog(bot))
+    await bot.add_cog(Help(bot))

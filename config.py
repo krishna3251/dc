@@ -1,166 +1,181 @@
-import os
 import discord
-from typing import List, Set, Dict, Any
+import asyncio
+import os
+import sys
+import logging
+import threading
+import time
+from functools import lru_cache
+from discord.ext import commands
+from dotenv import load_dotenv
 
-# Bot configuration
-PREFIX = os.getenv("PREFIX", "lx")  # Default prefix is 'deku' if not set in env
-TOKEN = os.getenv("DISCORD_TOKEN", "")  # Bot token from environment variable
-DESCRIPTION = "Enhanced Discord bot with comprehensive moderation, logging, customization, and server management features"
+load_dotenv()
 
-# Owner IDs - people who have full access to the bot
-OWNER_IDS = list(map(int, os.getenv("OWNER_IDS", "").split(","))) if os.getenv("OWNER_IDS") else []
+from config import TOKEN, PREFIX, INTENTS, EXTENSIONS
+from database import init_app
 
-# Discord intents configuration
-INTENTS = discord.Intents.default()  # Start with default intents
-INTENTS.message_content = True  # Enable message content intent
-INTENTS.members = True  # Enable members intent - needed for commands like userinfo and moderation
-INTENTS.guilds = True  # Enable guild related data - needed for most commands
-INTENTS.emojis_and_stickers = True  # Enable emoji and sticker related data
-
-# Only enable additional privileged intents if configured in the Discord Developer Portal
 try:
-    # Check environment variable to see if full privileged intents are enabled
-    if os.getenv("ENABLE_PRIVILEGED_INTENTS", "false").lower() == "true":
-        INTENTS.presences = True  # Enable presence intent - shows user status
+    from flask import Flask
+    app = Flask(__name__)
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///bot.db"
+    init_app(app)
+except ImportError:
+    app = None
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s]: %(message)s",
+    handlers=[logging.StreamHandler()]
+)
+
+class OptimizedBot(commands.Bot):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.start_time = time.time()
+        self.command_counter = 0
+        self._config_cache = {}
+        self._config_timestamps = {}
+        self._config_ttl = 300
+
+    @lru_cache(maxsize=128)
+    def get_cached_prefix(self, guild_id):
+        return PREFIX
+
+    async def on_command(self, ctx):
+        self.command_counter += 1
+
+    def get_uptime(self):
+        return time.time() - self.start_time
+
+bot = OptimizedBot(
+    command_prefix=PREFIX,
+    intents=INTENTS,
+    help_command=None
+)
+
+@bot.event
+async def on_ready():
+    logging.info(f"\u2705 Bot is online as {bot.user}")
+    if should_sync_commands():
+        try:
+            await bot.tree.sync()
+            logging.info("\u2705 Slash commands synced!")
+        except Exception as e:
+            logging.error(f"❌ Slash command sync failed: {e}")
+
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandNotFound):
+        await ctx.send("❌ Unknown command. Try using the correct prefix or `help`.")
+    elif isinstance(error, discord.Forbidden):
+        await ctx.send("❌ I don’t have permission to do that. Make sure I can send embeds.")
     else:
-        print("Note: Full privileged intents not enabled. Some features like user status display will be limited.")
-except Exception as e:
-    print(f"Warning: Failed to set privileged intents: {e}")
+        await ctx.send(f"⚠️ `{type(error).__name__}`: {error}")
+        raise error
 
-# Status configuration
-STATUS_TYPE = os.getenv("STATUS_TYPE", "watching")  # playing, watching, listening
-STATUS_MESSAGE = os.getenv("STATUS_MESSAGE", "your server")
+def should_sync_commands():
+    last_sync_file = ".last_sync"
+    latest_mod_time = 0
+    for file in os.listdir("cogs"):
+        if file.endswith(".py"):
+            mod_time = os.path.getmtime(os.path.join("cogs", file))
+            latest_mod_time = max(latest_mod_time, mod_time)
 
-# List of cogs/extensions to load on startup
-EXTENSIONS = [
-    "anti_reply_cog",
-    "anti_spam",
-    "channel_perms",
-    "gif_cog",
-    "help_cog",
-    "invite_cog",
-    "mass_role_add_cog",
-    "minfo",
-    "ping",
-    "purge_member_cog",
-    "sarcastic_pinger",
-    "search_cog",
-    "vcperm",
-    "spotify_cog",
-    # New slash command extensions
-    "slash_commands",
-    "api_slash_commands"
-]
+    try:
+        if os.path.exists(last_sync_file):
+            with open(last_sync_file, "r") as f:
+                last_sync = float(f.read().strip())
+            needs_sync = latest_mod_time > last_sync
+        else:
+            needs_sync = True
 
-# API Keys (set these in environment variables for security)
-TENOR_API_KEY = os.getenv("TENOR_API_KEY", "")
-GIPHY_API_KEY = os.getenv("GIPHY_API_KEY", "")
+        if needs_sync:
+            with open(last_sync_file, "w") as f:
+                f.write(str(time.time()))
 
-# Default settings for various features
-DEFAULT_AUTOMOD_SETTINGS = {
-    "enabled": False,
-    "filter_profanity": True,
-    "filter_invites": True,
-    "filter_links": False,
-    "filter_mass_mentions": True,
-    "filter_caps": True,
-    "caps_threshold": 70,  # Percentage of capital letters
-    "caps_min_length": 10,  # Minimum message length for caps filter
-    "mention_threshold": 5,  # Max mentions in a message
-    "warn_threshold": 3,  # Warnings before escalation
-    "timeout_duration": 300,  # 5 minutes
-    "log_channel": None
-}
+        return needs_sync
+    except:
+        return True
 
-DEFAULT_LOGGING_SETTINGS = {
-    "enabled": False,
-    "log_channel": None,
-    "log_member_join": True,
-    "log_member_leave": True,
-    "log_member_update": True,
-    "log_message_edit": True,
-    "log_message_delete": True,
-    "log_channel_create": True,
-    "log_channel_delete": True,
-    "log_channel_update": True,
-    "log_role_create": True,
-    "log_role_delete": True,
-    "log_role_update": True,
-    "log_voice_state": True,
-    "log_emoji_update": True,
-    "log_server_update": True,
-    "log_mod_actions": True
-}
+async def load_extensions():
+    from database import db
+    cog_files = [f for f in os.listdir("cogs") if f.endswith(".py") and f != "__init__.py"]
 
-DEFAULT_WELCOME_SETTINGS = {
-    "enabled": False,
-    "channel": None,
-    "message": "Welcome {user} to {server}! You are member #{count}.",
-    "dm_enabled": False,
-    "dm_message": "Welcome to {server}! Please read the rules and have a great time!",
-    "image_enabled": False,
-    "image_background": "default",
-    "goodbye_enabled": False,
-    "goodbye_channel": None,
-    "goodbye_message": "Goodbye {user}! We hope to see you again soon."
-}
+    async def load_ext(file):
+        cog_path = f"cogs.{file[:-3]}"
+        try:
+            await bot.load_extension(cog_path)
+            logging.info(f"\u2705 Loaded cog: {cog_path}")
+        except Exception as e:
+            logging.error(f"❌ Failed to load {cog_path}: {e}", exc_info=True)
 
-DEFAULT_STATS_SETTINGS = {
-    "enabled": False,
-    "member_count_channel": None,
-    "update_interval": 900,  # 15 minutes
-    "display_bots": True,
-    "display_online": True
-}
+    priority = [f for f in cog_files if f.startswith(("help", "admin", "core", "spotify"))]
+    rest = [f for f in cog_files if f not in priority]
 
-DEFAULT_FILTER_SETTINGS = {
-    "enabled": False,
-    "filter_words": [],
-    "filtered_channels": [],
-    "exempt_roles": [],
-    "action": "delete",  # delete, warn, timeout
-    "notification": True,
-    "dm_notification": False
-}
+    for file in priority:
+        await load_ext(file)
 
-DEFAULT_ACTIVITY_SETTINGS = {
-    "enabled": False,
-    "track_messages": True,
-    "track_voice": True,
-    "leaderboard_channel": None,
-    "update_interval": 86400,  # 24 hours
-    "top_count": 10,
-    "point_settings": {
-        "message": 1,
-        "voice_minute": 2,
-        "reaction": 0.5
-    }
-}
+    await asyncio.gather(*(load_ext(file) for file in rest))
 
-# Cooldown settings
-COMMAND_COOLDOWNS = {
-    "ping": 5,  # seconds
-    "hug": 3,
-    "slap": 3,
-    "kiss": 3,
-    "pat": 3,
-    "poke": 3,
-    "dance": 3,
-    "cry": 3,
-    "laugh": 3,
-    "facepalm": 3,
-    "highfive": 3,
-    "gif": 5,
-    "search": 10,
-    "serverinfo": 30,
-    "userinfo": 15
-}
+    logging.info(f"\u2705 Loaded {len(priority) + len(rest)} extensions.")
 
-# Permission levels for custom commands
-PERMISSION_LEVELS = {
-    "everyone": 0,
-    "manage_messages": 1,
-    "manage_guild": 2,
-    "administrator": 3,
-    "owner": 4
-}
+@bot.command(name="restart")
+@commands.is_owner()
+async def restart(ctx):
+    await ctx.send("\ud83d\udd04 Restarting...")
+    logging.info("Restarting bot...")
+    bot._config_cache.clear()
+    os.execv(sys.executable, ["python"] + sys.argv)
+
+@bot.command(name="reload")
+@commands.is_owner()
+async def reload_cog(ctx, cog: str):
+    try:
+        await bot.reload_extension(f"cogs.{cog}")
+        await ctx.send(f"\ud83d\udd01 Reloaded `{cog}` successfully.")
+    except Exception as e:
+        await ctx.send(f"\u274c Error reloading `{cog}`:\n```{e}```")
+
+@bot.command(name="uptime")
+async def uptime(ctx):
+    uptime = bot.get_uptime()
+    await ctx.send(f"\u23f1\ufe0f Bot uptime: `{int(uptime // 60)} minutes`.")
+
+def run_discord_bot():
+    max_retries = 5
+    for attempt in range(1, max_retries + 1):
+        try:
+            asyncio.run(bot_main())
+            break
+        except (discord.ConnectionClosed, discord.GatewayNotFound) as e:
+            wait_time = min(30, 2 ** attempt)
+            logging.warning(f"Connection error: {e}. Retrying in {wait_time}s")
+            time.sleep(wait_time)
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}")
+            break
+
+async def bot_main():
+    async with bot:
+        await load_extensions()
+        await bot.start(TOKEN)
+
+def start_bot_thread():
+    bot_thread = threading.Thread(target=run_discord_bot, name="DiscordBot")
+    bot_thread.daemon = True
+    bot_thread.start()
+
+is_gunicorn = 'gunicorn' in sys.modules
+
+if __name__ != "__main__" and is_gunicorn:
+    start_bot_thread()
+
+if __name__ == "__main__":
+    try:
+        from keep_alive import keep_alive
+        keep_alive()
+        asyncio.run(bot_main())
+    except KeyboardInterrupt:
+        logging.info("\ud83d\uded1 Bot shutdown.")
+    except Exception as e:
+        logging.error(f"\u274c Critical Error: {e}")

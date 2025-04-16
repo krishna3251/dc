@@ -18,6 +18,7 @@ class SearchCog(commands.Cog):
         # API Keys - get from environment or use empty string
         self.google_api_key = os.getenv("GOOGLE_API_KEY", "")
         self.google_cx = os.getenv("GOOGLE_CSE_ID", "")  
+        api_key = os.getenv("OPENWEATHER_API_KEY", "")
         self.youtube_api_key = os.getenv("YOUTUBE_API_KEY", "")
         self.github_token = os.getenv("GITHUB_TOKEN", "")
     

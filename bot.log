@@ -1,0 +1,291 @@
+2025-04-15 11:34:42,281 - discord.client - WARNING - PyNaCl is not installed, voice will NOT be supported
+2025-04-15 11:34:42,282 - discord.client - INFO - logging in using static token
+2025-04-15 11:37:22,864 - discord.client - WARNING - PyNaCl is not installed, voice will NOT be supported
+2025-04-15 11:37:22,865 - discord.client - INFO - logging in using static token
+2025-04-15 11:37:23,210 - root - INFO - Successfully loaded extension anti_reply_cog
+2025-04-15 11:37:23,218 - root - INFO - Successfully loaded extension anti_spam
+2025-04-15 11:37:23,226 - root - INFO - Successfully loaded extension channel_perms
+2025-04-15 11:37:23,230 - root - INFO - Successfully loaded extension gif_cog
+2025-04-15 11:37:23,234 - root - INFO - Successfully loaded extension help_cog
+2025-04-15 11:37:23,241 - root - INFO - Successfully loaded extension invite_cog
+2025-04-15 11:37:23,249 - root - INFO - Successfully loaded extension mass_role_add_cog
+2025-04-15 11:37:23,258 - root - INFO - Successfully loaded extension minfo
+2025-04-15 11:37:23,280 - root - ERROR - Failed to load extension moderation: Extension 'moderation' raised an error: CommandRegistrationError: The command slowmode is already an existing command or alias.
+2025-04-15 11:37:23,352 - root - INFO - Successfully loaded extension ping
+2025-04-15 11:37:23,360 - root - INFO - Successfully loaded extension purge_member_cog
+2025-04-15 11:37:23,375 - root - INFO - Successfully loaded extension sarcastic_pinger
+2025-04-15 11:37:23,386 - root - INFO - Successfully loaded extension search_cog
+2025-04-15 11:37:23,395 - root - ERROR - Failed to load extension serverinfo: Extension 'serverinfo' raised an error: CommandRegistrationError: The command banner is already an existing command or alias.
+2025-04-15 11:37:23,411 - root - INFO - Successfully loaded extension vcperm
+2025-04-15 11:37:23,413 - root - ERROR - Failed to load extension log_cog: Extension 'log_cog' could not be loaded or found.
+2025-04-15 11:37:23,415 - root - ERROR - Failed to load extension automod_cog: Extension 'automod_cog' could not be loaded or found.
+2025-04-15 11:37:23,415 - root - ERROR - Failed to load extension stats_cog: Extension 'stats_cog' could not be loaded or found.
+2025-04-15 11:37:23,416 - root - ERROR - Failed to load extension welcome_cog: Extension 'welcome_cog' could not be loaded or found.
+2025-04-15 11:37:23,416 - root - ERROR - Failed to load extension temp_channels_cog: Extension 'temp_channels_cog' could not be loaded or found.
+2025-04-15 11:37:23,417 - root - ERROR - Failed to load extension backup_cog: Extension 'backup_cog' could not be loaded or found.
+2025-04-15 11:37:23,417 - root - ERROR - Failed to load extension role_manager_cog: Extension 'role_manager_cog' could not be loaded or found.
+2025-04-15 11:37:23,417 - root - ERROR - Failed to load extension activity_tracker_cog: Extension 'activity_tracker_cog' could not be loaded or found.
+2025-04-15 11:37:23,418 - root - ERROR - Failed to load extension custom_commands_cog: Extension 'custom_commands_cog' could not be loaded or found.
+2025-04-15 11:37:23,418 - root - ERROR - Failed to load extension message_filter_cog: Extension 'message_filter_cog' could not be loaded or found.
+2025-04-15 11:39:26,543 - discord.client - WARNING - PyNaCl is not installed, voice will NOT be supported
+2025-04-15 11:39:26,544 - discord.client - INFO - logging in using static token
+2025-04-15 11:39:26,935 - root - INFO - Successfully loaded extension anti_reply_cog
+2025-04-15 11:39:26,940 - root - INFO - Successfully loaded extension anti_spam
+2025-04-15 11:39:26,948 - root - INFO - Successfully loaded extension channel_perms
+2025-04-15 11:39:26,957 - root - INFO - Successfully loaded extension gif_cog
+2025-04-15 11:39:26,959 - root - INFO - Successfully loaded extension help_cog
+2025-04-15 11:39:26,964 - root - INFO - Successfully loaded extension invite_cog
+2025-04-15 11:39:26,968 - root - INFO - Successfully loaded extension mass_role_add_cog
+2025-04-15 11:39:26,982 - root - INFO - Successfully loaded extension minfo
+2025-04-15 11:39:27,018 - root - INFO - Successfully loaded extension moderation
+2025-04-15 11:39:27,037 - root - INFO - Successfully loaded extension ping
+2025-04-15 11:39:27,043 - root - INFO - Successfully loaded extension purge_member_cog
+2025-04-15 11:39:27,047 - root - INFO - Successfully loaded extension sarcastic_pinger
+2025-04-15 11:39:27,049 - root - INFO - Successfully loaded extension search_cog
+2025-04-15 11:39:27,053 - root - ERROR - Failed to load extension serverinfo: Extension 'serverinfo' raised an error: CommandRegistrationError: The command roles is already an existing command or alias.
+2025-04-15 11:39:27,074 - root - INFO - Successfully loaded extension vcperm
+2025-04-15 11:39:27,074 - root - ERROR - Failed to load extension log_cog: Extension 'log_cog' could not be loaded or found.
+2025-04-15 11:39:27,075 - root - ERROR - Failed to load extension automod_cog: Extension 'automod_cog' could not be loaded or found.
+2025-04-15 11:39:27,076 - root - ERROR - Failed to load extension stats_cog: Extension 'stats_cog' could not be loaded or found.
+2025-04-15 11:39:27,078 - root - ERROR - Failed to load extension welcome_cog: Extension 'welcome_cog' could not be loaded or found.
+2025-04-15 11:39:27,078 - root - ERROR - Failed to load extension temp_channels_cog: Extension 'temp_channels_cog' could not be loaded or found.
+2025-04-15 11:39:27,078 - root - ERROR - Failed to load extension backup_cog: Extension 'backup_cog' could not be loaded or found.
+2025-04-15 11:39:27,079 - root - ERROR - Failed to load extension role_manager_cog: Extension 'role_manager_cog' could not be loaded or found.
+2025-04-15 11:39:27,079 - root - ERROR - Failed to load extension activity_tracker_cog: Extension 'activity_tracker_cog' could not be loaded or found.
+2025-04-15 11:39:27,080 - root - ERROR - Failed to load extension custom_commands_cog: Extension 'custom_commands_cog' could not be loaded or found.
+2025-04-15 11:39:27,081 - root - ERROR - Failed to load extension message_filter_cog: Extension 'message_filter_cog' could not be loaded or found.
+2025-04-15 11:40:37,837 - discord.client - WARNING - PyNaCl is not installed, voice will NOT be supported
+2025-04-15 11:40:37,838 - discord.client - INFO - logging in using static token
+2025-04-15 11:40:38,196 - root - INFO - Successfully loaded extension anti_reply_cog
+2025-04-15 11:40:38,198 - root - INFO - Successfully loaded extension anti_spam
+2025-04-15 11:40:38,203 - root - INFO - Successfully loaded extension channel_perms
+2025-04-15 11:40:38,204 - root - INFO - Successfully loaded extension gif_cog
+2025-04-15 11:40:38,205 - root - INFO - Successfully loaded extension help_cog
+2025-04-15 11:40:38,207 - root - INFO - Successfully loaded extension invite_cog
+2025-04-15 11:40:38,209 - root - INFO - Successfully loaded extension mass_role_add_cog
+2025-04-15 11:40:38,211 - root - INFO - Successfully loaded extension minfo
+2025-04-15 11:40:38,219 - root - INFO - Successfully loaded extension moderation
+2025-04-15 11:40:38,230 - root - INFO - Successfully loaded extension ping
+2025-04-15 11:40:38,231 - root - INFO - Successfully loaded extension purge_member_cog
+2025-04-15 11:40:38,236 - root - INFO - Successfully loaded extension sarcastic_pinger
+2025-04-15 11:40:38,237 - root - INFO - Successfully loaded extension search_cog
+2025-04-15 11:40:38,246 - root - INFO - Successfully loaded extension serverinfo
+2025-04-15 11:40:38,253 - root - INFO - Successfully loaded extension vcperm
+2025-04-15 11:55:07,890 - discord.client - WARNING - PyNaCl is not installed, voice will NOT be supported
+2025-04-15 11:55:07,893 - discord.client - INFO - logging in using static token
+2025-04-15 11:55:08,327 - root - INFO - Successfully loaded extension anti_reply_cog
+2025-04-15 11:55:08,331 - root - INFO - Successfully loaded extension anti_spam
+2025-04-15 11:55:08,340 - root - INFO - Successfully loaded extension channel_perms
+2025-04-15 11:55:08,344 - root - INFO - Successfully loaded extension gif_cog
+2025-04-15 11:55:08,347 - root - INFO - Successfully loaded extension help_cog
+2025-04-15 11:55:08,351 - root - INFO - Successfully loaded extension invite_cog
+2025-04-15 11:55:08,356 - root - INFO - Successfully loaded extension mass_role_add_cog
+2025-04-15 11:55:08,363 - root - INFO - Successfully loaded extension minfo
+2025-04-15 11:55:08,372 - root - INFO - Successfully loaded extension moderation
+2025-04-15 11:55:08,406 - root - INFO - Successfully loaded extension ping
+2025-04-15 11:55:08,410 - root - INFO - Successfully loaded extension purge_member_cog
+2025-04-15 11:55:08,416 - root - INFO - Successfully loaded extension sarcastic_pinger
+2025-04-15 11:55:08,419 - root - INFO - Successfully loaded extension search_cog
+2025-04-15 11:55:08,424 - root - INFO - Successfully loaded extension serverinfo
+2025-04-15 11:55:08,436 - root - INFO - Successfully loaded extension vcperm
+2025-04-15 11:55:08,445 - root - INFO - Successfully loaded extension log_cog
+2025-04-15 11:55:08,466 - root - ERROR - Failed to load extension enhanced_gif_cog: Extension 'enhanced_gif_cog' raised an error: CommandRegistrationError: The command gif is already an existing command or alias.
+2025-04-15 11:55:08,492 - root - ERROR - Failed to load extension enhanced_search_cog: Extension 'enhanced_search_cog' raised an error: CommandRegistrationError: The command searchhelp is already an existing command or alias.
+2025-04-15 11:55:08,511 - root - ERROR - Failed to load extension spotify_cog: Extension 'spotify_cog' raised an error: CommandAlreadyRegistered: Command 'spotify' already registered.
+2025-04-15 11:55:08,789 - asyncio - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7efcdd332d50>
+2025-04-15 12:36:29,404 - discord.client - WARNING - PyNaCl is not installed, voice will NOT be supported
+2025-04-15 12:36:29,411 - discord.client - INFO - logging in using static token
+2025-04-15 12:36:29,819 - root - INFO - Successfully loaded extension anti_reply_cog
+2025-04-15 12:36:29,823 - root - INFO - Successfully loaded extension anti_spam
+2025-04-15 12:36:29,831 - root - INFO - Successfully loaded extension channel_perms
+2025-04-15 12:36:29,834 - root - INFO - Successfully loaded extension gif_cog
+2025-04-15 12:36:29,840 - root - INFO - Successfully loaded extension help_cog
+2025-04-15 12:36:29,843 - root - INFO - Successfully loaded extension invite_cog
+2025-04-15 12:36:29,849 - root - INFO - Successfully loaded extension mass_role_add_cog
+2025-04-15 12:36:29,855 - root - INFO - Successfully loaded extension minfo
+2025-04-15 12:36:29,903 - root - INFO - Successfully loaded extension ping
+2025-04-15 12:36:29,907 - root - INFO - Successfully loaded extension purge_member_cog
+2025-04-15 12:36:29,913 - root - INFO - Successfully loaded extension sarcastic_pinger
+2025-04-15 12:36:29,915 - root - INFO - Successfully loaded extension search_cog
+2025-04-15 12:36:29,924 - root - INFO - Successfully loaded extension vcperm
+2025-04-15 12:36:29,931 - root - ERROR - Failed to load extension spotify_cog: Extension 'spotify_cog' raised an error: CommandAlreadyRegistered: Command 'spotify' already registered.
+2025-04-15 12:36:30,178 - web - ERROR - Bot crashed: Shard ID None is requesting privileged intents that have not been explicitly enabled in the developer portal. It is recommended to go to https://discord.com/developers/applications/ and explicitly enable the privileged intents within your application's page. If this is not possible, then consider disabling the privileged intents instead.
+2025-04-15 12:37:53,790 - asyncio - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7f8a7504e790>
+2025-04-15 12:58:11,688 - discord.client - WARNING - PyNaCl is not installed, voice will NOT be supported
+2025-04-15 12:58:11,693 - discord.client - INFO - logging in using static token
+2025-04-15 12:58:12,103 - root - INFO - Successfully loaded extension anti_reply_cog
+2025-04-15 12:58:12,108 - root - INFO - Successfully loaded extension anti_spam
+2025-04-15 12:58:12,117 - root - INFO - Successfully loaded extension channel_perms
+2025-04-15 12:58:12,121 - root - INFO - Successfully loaded extension gif_cog
+2025-04-15 12:58:12,124 - root - INFO - Successfully loaded extension help_cog
+2025-04-15 12:58:12,130 - root - INFO - Successfully loaded extension invite_cog
+2025-04-15 12:58:12,137 - root - INFO - Successfully loaded extension mass_role_add_cog
+2025-04-15 12:58:12,144 - root - INFO - Successfully loaded extension minfo
+2025-04-15 12:58:12,183 - root - INFO - Successfully loaded extension ping
+2025-04-15 12:58:12,190 - root - INFO - Successfully loaded extension purge_member_cog
+2025-04-15 12:58:12,196 - root - INFO - Successfully loaded extension sarcastic_pinger
+2025-04-15 12:58:12,199 - root - INFO - Successfully loaded extension search_cog
+2025-04-15 12:58:12,212 - root - INFO - Successfully loaded extension vcperm
+2025-04-15 12:58:12,241 - root - INFO - Successfully loaded extension spotify_cog
+2025-04-15 12:58:12,482 - web - ERROR - Bot crashed: Shard ID None is requesting privileged intents that have not been explicitly enabled in the developer portal. It is recommended to go to https://discord.com/developers/applications/ and explicitly enable the privileged intents within your application's page. If this is not possible, then consider disabling the privileged intents instead.
+2025-04-15 12:58:13,691 - discord.client - INFO - logging in using static token
+2025-04-15 12:58:14,097 - root - INFO - Successfully loaded extension anti_reply_cog
+2025-04-15 12:58:14,099 - root - INFO - Successfully loaded extension anti_spam
+2025-04-15 12:58:14,104 - root - INFO - Successfully loaded extension channel_perms
+2025-04-15 12:58:14,106 - root - INFO - Successfully loaded extension gif_cog
+2025-04-15 12:58:14,107 - root - INFO - Successfully loaded extension help_cog
+2025-04-15 12:58:14,109 - root - INFO - Successfully loaded extension invite_cog
+2025-04-15 12:58:14,113 - root - INFO - Successfully loaded extension mass_role_add_cog
+2025-04-15 12:58:14,115 - root - INFO - Successfully loaded extension minfo
+2025-04-15 12:58:14,117 - root - INFO - Successfully loaded extension ping
+2025-04-15 12:58:14,119 - root - INFO - Successfully loaded extension purge_member_cog
+2025-04-15 12:58:14,121 - root - INFO - Successfully loaded extension sarcastic_pinger
+2025-04-15 12:58:14,123 - root - INFO - Successfully loaded extension search_cog
+2025-04-15 12:58:14,133 - root - INFO - Successfully loaded extension vcperm
+2025-04-15 12:58:14,138 - root - INFO - Successfully loaded extension spotify_cog
+2025-04-15 12:58:14,329 - web - ERROR - Bot crashed: Shard ID None is requesting privileged intents that have not been explicitly enabled in the developer portal. It is recommended to go to https://discord.com/developers/applications/ and explicitly enable the privileged intents within your application's page. If this is not possible, then consider disabling the privileged intents instead.
+2025-04-15 13:00:44,592 - database - INFO - Database tables created
+2025-04-15 13:00:46,356 - database - INFO - Database tables created
+2025-04-15 13:01:02,716 - database - INFO - Database tables created
+2025-04-15 13:01:17,275 - discord.client - WARNING - PyNaCl is not installed, voice will NOT be supported
+2025-04-15 13:01:17,276 - discord.client - INFO - logging in using static token
+2025-04-15 13:01:17,775 - root - INFO - Successfully loaded extension anti_reply_cog
+2025-04-15 13:01:17,777 - root - INFO - Successfully loaded extension anti_spam
+2025-04-15 13:01:17,784 - root - INFO - Successfully loaded extension channel_perms
+2025-04-15 13:01:17,785 - root - INFO - Successfully loaded extension gif_cog
+2025-04-15 13:01:17,788 - root - INFO - Successfully loaded extension help_cog
+2025-04-15 13:01:17,790 - root - INFO - Successfully loaded extension invite_cog
+2025-04-15 13:01:17,795 - root - INFO - Successfully loaded extension mass_role_add_cog
+2025-04-15 13:01:17,798 - root - INFO - Successfully loaded extension minfo
+2025-04-15 13:01:17,811 - root - INFO - Successfully loaded extension ping
+2025-04-15 13:01:17,814 - root - INFO - Successfully loaded extension purge_member_cog
+2025-04-15 13:01:17,818 - root - INFO - Successfully loaded extension sarcastic_pinger
+2025-04-15 13:01:17,820 - root - INFO - Successfully loaded extension search_cog
+2025-04-15 13:01:17,830 - root - INFO - Successfully loaded extension vcperm
+2025-04-15 13:01:17,836 - root - INFO - Successfully loaded extension spotify_cog
+2025-04-15 13:01:18,048 - discord.gateway - INFO - Shard ID None has connected to Gateway (Session ID: 6cdecf37667a4a8660058f26689648d4).
+2025-04-15 13:01:20,053 - root - INFO - Logged in as deku (1193532551348891708)
+2025-04-15 13:01:20,053 - root - INFO - Discord.py Version: 2.5.2
+2025-04-15 13:01:20,053 - root - INFO - Bot Version: 2.0.0
+2025-04-15 13:01:20,053 - root - INFO - Bot is serving 1 guilds with a total of 1 members
+2025-04-15 13:03:14,422 - database - INFO - Database tables created
+2025-04-15 13:03:17,996 - database - INFO - Database tables created
+2025-04-15 13:03:19,522 - database - INFO - Database tables created
+2025-04-15 13:03:38,822 - discord.client - WARNING - PyNaCl is not installed, voice will NOT be supported
+2025-04-15 13:03:38,823 - discord.client - INFO - logging in using static token
+2025-04-15 13:03:39,389 - root - INFO - Successfully loaded extension anti_reply_cog
+2025-04-15 13:03:39,391 - root - INFO - Successfully loaded extension anti_spam
+2025-04-15 13:03:39,399 - root - INFO - Successfully loaded extension channel_perms
+2025-04-15 13:03:39,401 - root - INFO - Successfully loaded extension gif_cog
+2025-04-15 13:03:39,405 - root - INFO - Successfully loaded extension help_cog
+2025-04-15 13:03:39,407 - root - INFO - Successfully loaded extension invite_cog
+2025-04-15 13:03:39,409 - root - INFO - Successfully loaded extension mass_role_add_cog
+2025-04-15 13:03:39,411 - root - INFO - Successfully loaded extension minfo
+2025-04-15 13:03:39,439 - root - INFO - Successfully loaded extension ping
+2025-04-15 13:03:39,442 - root - INFO - Successfully loaded extension purge_member_cog
+2025-04-15 13:03:39,447 - root - INFO - Successfully loaded extension sarcastic_pinger
+2025-04-15 13:03:39,448 - root - INFO - Successfully loaded extension search_cog
+2025-04-15 13:03:39,462 - root - INFO - Successfully loaded extension vcperm
+2025-04-15 13:03:39,468 - root - INFO - Successfully loaded extension spotify_cog
+2025-04-15 13:03:39,681 - discord.gateway - INFO - Shard ID None has connected to Gateway (Session ID: b5d4849fd8911f69bce8fe27c6656c11).
+2025-04-15 13:03:42,978 - database - INFO - Database tables created
+2025-04-15 13:08:27,193 - database - INFO - Database tables created
+2025-04-15 13:08:37,585 - database - INFO - Database tables created
+2025-04-15 13:08:44,602 - database - INFO - Database tables created
+2025-04-15 13:09:13,302 - discord.client - WARNING - PyNaCl is not installed, voice will NOT be supported
+2025-04-15 13:09:13,303 - discord.client - INFO - logging in using static token
+2025-04-15 13:09:13,671 - root - INFO - Successfully loaded extension anti_reply_cog
+2025-04-15 13:09:13,674 - root - INFO - Successfully loaded extension anti_spam
+2025-04-15 13:09:13,681 - root - INFO - Successfully loaded extension channel_perms
+2025-04-15 13:09:13,683 - root - INFO - Successfully loaded extension gif_cog
+2025-04-15 13:09:13,690 - root - ERROR - Failed to load extension help_cog: Extension 'help_cog' raised an error: CommandAlreadyRegistered: Command 'help' already registered.
+2025-04-15 13:09:13,707 - root - INFO - Successfully loaded extension invite_cog
+2025-04-15 13:09:13,710 - root - INFO - Successfully loaded extension mass_role_add_cog
+2025-04-15 13:09:13,713 - root - INFO - Successfully loaded extension minfo
+2025-04-15 13:09:13,727 - root - INFO - Successfully loaded extension ping
+2025-04-15 13:09:13,729 - root - INFO - Successfully loaded extension purge_member_cog
+2025-04-15 13:09:13,732 - root - INFO - Successfully loaded extension sarcastic_pinger
+2025-04-15 13:09:13,734 - root - INFO - Successfully loaded extension search_cog
+2025-04-15 13:09:13,742 - root - INFO - Successfully loaded extension vcperm
+2025-04-15 13:09:13,746 - root - INFO - Successfully loaded extension spotify_cog
+2025-04-15 13:09:13,750 - root - ERROR - Failed to load extension slash_commands: Extension 'slash_commands' raised an error: CommandAlreadyRegistered: Command 'ping' already registered.
+2025-04-15 13:09:13,759 - root - INFO - Successfully loaded extension api_slash_commands
+2025-04-15 13:09:14,021 - discord.gateway - INFO - Shard ID None has connected to Gateway (Session ID: ad2df7d1ad1a0bc1e042c8b794563c38).
+2025-04-15 13:09:16,026 - root - INFO - Logged in as deku (1193532551348891708)
+2025-04-15 13:09:16,027 - root - INFO - Discord.py Version: 2.5.2
+2025-04-15 13:09:16,027 - root - INFO - Bot Version: 2.0.0
+2025-04-15 13:09:16,027 - root - WARNING - 2 extensions failed to load:
+2025-04-15 13:09:16,027 - root - WARNING -   - help_cog: Extension 'help_cog' raised an error: CommandAlreadyRegistered: Command 'help' already registered.
+2025-04-15 13:09:16,027 - root - WARNING -   - slash_commands: Extension 'slash_commands' raised an error: CommandAlreadyRegistered: Command 'ping' already registered.
+2025-04-15 13:09:16,027 - root - INFO - Bot is serving 1 guilds with a total of 13 members
+2025-04-15 13:13:54,310 - root - INFO - Joined new guild: BCA (ID: 997507587358589059)
+2025-04-15 13:18:36,880 - discord.gateway - INFO - Shard ID None has successfully RESUMED session ad2df7d1ad1a0bc1e042c8b794563c38.
+2025-04-15 13:22:10,393 - database - INFO - Database tables created
+2025-04-15 13:22:15,006 - database - INFO - Database tables created
+2025-04-15 13:22:25,449 - database - INFO - Database tables created
+2025-04-15 13:22:25,454 - __main__ - INFO - Starting Discord Bot with Web Interface
+2025-04-15 13:22:25,454 - __main__ - INFO - Using privileged intents: false
+2025-04-15 13:22:46,960 - database - INFO - Database tables created
+2025-04-15 13:23:24,122 - discord.client - WARNING - PyNaCl is not installed, voice will NOT be supported
+2025-04-15 13:23:24,123 - discord.client - INFO - logging in using static token
+2025-04-15 13:23:24,427 - root - INFO - Successfully loaded extension anti_reply_cog
+2025-04-15 13:23:24,429 - root - INFO - Successfully loaded extension anti_spam
+2025-04-15 13:23:24,435 - root - INFO - Successfully loaded extension channel_perms
+2025-04-15 13:23:24,437 - root - INFO - Successfully loaded extension gif_cog
+2025-04-15 13:23:24,444 - root - ERROR - Failed to load extension help_cog: Extension 'help_cog' raised an error: CommandAlreadyRegistered: Command 'bothelp' already registered.
+2025-04-15 13:23:24,447 - root - INFO - Successfully loaded extension invite_cog
+2025-04-15 13:23:24,450 - root - INFO - Successfully loaded extension mass_role_add_cog
+2025-04-15 13:23:24,452 - root - INFO - Successfully loaded extension minfo
+2025-04-15 13:23:24,463 - root - INFO - Successfully loaded extension ping
+2025-04-15 13:23:24,464 - root - INFO - Successfully loaded extension purge_member_cog
+2025-04-15 13:23:24,468 - root - INFO - Successfully loaded extension sarcastic_pinger
+2025-04-15 13:23:24,469 - root - INFO - Successfully loaded extension search_cog
+2025-04-15 13:23:24,476 - root - INFO - Successfully loaded extension vcperm
+2025-04-15 13:23:24,481 - root - INFO - Successfully loaded extension spotify_cog
+2025-04-15 13:23:24,485 - root - ERROR - Failed to load extension slash_commands: Extension 'slash_commands' raised an error: CommandAlreadyRegistered: Command 'lock' already registered.
+2025-04-15 13:23:24,488 - root - INFO - Successfully loaded extension api_slash_commands
+2025-04-15 13:23:24,682 - discord.gateway - INFO - Shard ID None has connected to Gateway (Session ID: ddfc1350f805587bb54a463ab5c164aa).
+2025-04-15 13:23:26,690 - root - INFO - Logged in as deku (1193532551348891708)
+2025-04-15 13:23:26,690 - root - INFO - Discord.py Version: 2.5.2
+2025-04-15 13:23:26,691 - root - INFO - Bot Version: 2.0.0
+2025-04-15 13:23:26,691 - root - WARNING - 2 extensions failed to load:
+2025-04-15 13:23:26,691 - root - WARNING -   - help_cog: Extension 'help_cog' raised an error: CommandAlreadyRegistered: Command 'bothelp' already registered.
+2025-04-15 13:23:26,691 - root - WARNING -   - slash_commands: Extension 'slash_commands' raised an error: CommandAlreadyRegistered: Command 'lock' already registered.
+2025-04-15 13:23:26,691 - root - INFO - Bot is serving 2 guilds with a total of 76 members
+2025-04-15 13:29:21,731 - database - INFO - Database tables created
+2025-04-15 13:30:22,346 - database - INFO - Database tables created
+2025-04-15 13:33:28,844 - database - INFO - Database tables created
+2025-04-15 13:35:49,199 - database - INFO - Database tables created
+2025-04-15 13:37:42,950 - database - INFO - Database tables created
+2025-04-15 13:37:52,377 - discord.client - WARNING - PyNaCl is not installed, voice will NOT be supported
+2025-04-15 13:37:52,378 - discord.client - INFO - logging in using static token
+2025-04-15 13:37:52,752 - root - INFO - Successfully loaded extension anti_reply_cog
+2025-04-15 13:37:52,755 - root - INFO - Successfully loaded extension anti_spam
+2025-04-15 13:37:52,766 - root - INFO - Successfully loaded extension channel_perms
+2025-04-15 13:37:52,770 - root - INFO - Successfully loaded extension gif_cog
+2025-04-15 13:37:52,781 - root - ERROR - Failed to load extension help_cog: Extension 'help_cog' raised an error: CommandAlreadyRegistered: Command 'help' already registered.
+2025-04-15 13:37:52,789 - root - INFO - Successfully loaded extension invite_cog
+2025-04-15 13:37:52,798 - root - INFO - Successfully loaded extension mass_role_add_cog
+2025-04-15 13:37:52,805 - root - INFO - Successfully loaded extension minfo
+2025-04-15 13:37:52,830 - root - INFO - Successfully loaded extension ping
+2025-04-15 13:37:52,834 - root - INFO - Successfully loaded extension purge_member_cog
+2025-04-15 13:37:52,840 - root - INFO - Successfully loaded extension sarcastic_pinger
+2025-04-15 13:37:52,843 - root - INFO - Successfully loaded extension search_cog
+2025-04-15 13:37:52,855 - root - INFO - Successfully loaded extension vcperm
+2025-04-15 13:37:52,885 - root - INFO - Successfully loaded extension spotify_cog
+2025-04-15 13:37:52,892 - root - ERROR - Failed to load extension slash_commands: Extension 'slash_commands' raised an error: CommandAlreadyRegistered: Command 'slowmode' already registered.
+2025-04-15 13:37:52,898 - root - INFO - Successfully loaded extension api_slash_commands
+2025-04-15 13:37:53,105 - discord.gateway - INFO - Shard ID None has connected to Gateway (Session ID: c6fcf6e4949d2224d5fbf86d8e49501d).
+2025-04-15 13:37:55,112 - root - INFO - Logged in as deku (1193532551348891708)
+2025-04-15 13:37:55,113 - root - INFO - Discord.py Version: 2.5.2
+2025-04-15 13:37:55,113 - root - INFO - Bot Version: 2.0.0
+2025-04-15 13:37:55,114 - root - WARNING - 2 extensions failed to load:
+2025-04-15 13:37:55,114 - root - WARNING -   - help_cog: Extension 'help_cog' raised an error: CommandAlreadyRegistered: Command 'help' already registered.
+2025-04-15 13:37:55,114 - root - WARNING -   - slash_commands: Extension 'slash_commands' raised an error: CommandAlreadyRegistered: Command 'slowmode' already registered.
+2025-04-15 13:37:55,114 - root - INFO - Bot is serving 2 guilds with a total of 76 members
+2025-04-15 13:56:34,981 - discord.gateway - INFO - Shard ID None has successfully RESUMED session c6fcf6e4949d2224d5fbf86d8e49501d.
+2025-04-15 15:13:43,263 - discord.gateway - INFO - Shard ID None has successfully RESUMED session c6fcf6e4949d2224d5fbf86d8e49501d.
+2025-04-15 15:45:26,572 - discord.gateway - INFO - Shard ID None has successfully RESUMED session c6fcf6e4949d2224d5fbf86d8e49501d.
+2025-04-16 06:27:09,558 - database - INFO - Database tables created

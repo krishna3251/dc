@@ -13,7 +13,9 @@ load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")  # From .env
 PREFIX = "lx"
-INTENTS = discord.Intents.all()
+INTENTS = discord.Intents.default()
+INTENTS.message_content = True  # 🟢 Required
+
 
 # Optional Flask app for keep_alive (e.g., Render, Replit)
 try:

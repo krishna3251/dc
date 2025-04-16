@@ -3,7 +3,7 @@ import discord
 from typing import List, Set, Dict, Any
 
 # Bot configuration
-PREFIX = os.getenv("PREFIX", "deku")  # Default prefix is 'deku' if not set in env
+PREFIX = os.getenv("PREFIX", "lx")  # Default prefix is 'deku' if not set in env
 TOKEN = os.getenv("DISCORD_TOKEN", "")  # Bot token from environment variable
 DESCRIPTION = "Enhanced Discord bot with comprehensive moderation, logging, customization, and server management features"
 

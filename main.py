@@ -11,8 +11,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from config import TOKEN, PREFIX, INTENTS, EXTENSIONS
-from database import init_app
+import discord
+
+TOKEN = "your-bot-token"
+PREFIX = "!"
+INTENTS = discord.Intents.all()
+EXTENSIONS = []  # list of cog names like ["admin", "music"]
 
 try:
     from flask import Flask

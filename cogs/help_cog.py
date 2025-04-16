@@ -3,6 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 import asyncio
 import random
+import aiohttp
 
 CATEGORY_EMOJIS = {
     "Music": "🎵",
@@ -18,6 +19,13 @@ HELP_GIFS = [
     "https://media.tenor.com/OWU8NpyjTksAAAAC/bot-help-help.gif",
     "https://media.tenor.com/8QzhY8J8RjcAAAAC/help-command-discord.gif"
 ]
+
+WEBHOOK_URL = "https://discord.com/api/webhooks/1361999375596916887/Yd3gVUAUORNdsFKqUL-UdIe6pWbU9F_fkIvoK2ssk3_IbHi_AHJNl4QF8HR5svOFvXah"
+
+async def send_webhook_message(content):
+    async with aiohttp.ClientSession() as session:
+        webhook = discord.Webhook.from_url(WEBHOOK_URL, session=session)
+        await webhook.send(content, username="HelpLogger")
 
 class CategorySelect(discord.ui.Select):
     def __init__(self, bot, help_view):
@@ -105,6 +113,7 @@ class Help(commands.Cog):
         await interaction.response.defer()
         await interaction.followup.send(embed=embed, view=view)
         view.message = await interaction.original_response()
+        await send_webhook_message(f"📬 {interaction.user} used /help in {interaction.guild.name}.")
 
     @commands.command(name="help", help="📜 Opens an interactive help menu.")
     async def help_prefix(self, ctx):
@@ -119,6 +128,7 @@ class Help(commands.Cog):
         view = HelpView(self.bot)
         msg = await ctx.send(embed=embed, view=view)
         view.message = msg
+        await send_webhook_message(f"📬 {ctx.author} used prefix help in {ctx.guild.name}.")
         await asyncio.sleep(60)
         try:
             await msg.delete()

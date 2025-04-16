@@ -10,11 +10,15 @@ from discord.ext import commands
 from dotenv import load_dotenv
 
 load_dotenv()
-from config import DISCORD_TOKEN
-from db_handler import init_db
+
+from config import TOKEN, PREFIX, INTENTS, EXTENSIONS  # updated config usage
+from database import init_app  # use database setup
 
 try:
-    from flask_app import app  # Optional Flask app
+    from flask import Flask
+    app = Flask(__name__)
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///bot.db"
+    init_app(app)
 except ImportError:
     app = None
 
@@ -23,11 +27,6 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s]: %(message)s",
     handlers=[logging.StreamHandler()]
 )
-
-intents = discord.Intents.default()
-intents.message_content = True
-intents.guilds = True
-intents.members = True
 
 class OptimizedBot(commands.Bot):
     def __init__(self, *args, **kwargs):
@@ -40,7 +39,7 @@ class OptimizedBot(commands.Bot):
 
     @lru_cache(maxsize=128)
     def get_cached_prefix(self, guild_id):
-        return "lx "
+        return PREFIX
 
     async def on_command(self, ctx):
         self.command_counter += 1
@@ -49,8 +48,8 @@ class OptimizedBot(commands.Bot):
         return time.time() - self.start_time
 
 bot = OptimizedBot(
-    command_prefix="lx ",
-    intents=intents,
+    command_prefix=PREFIX,
+    intents=INTENTS,
     help_command=None
 )
 
@@ -89,7 +88,7 @@ def should_sync_commands():
         return True
 
 async def load_extensions():
-    init_db()
+    from database import db  # just to ensure db exists before cog load if needed
     cog_files = [f for f in os.listdir("cogs") if f.endswith(".py") and f != "__init__.py"]
 
     async def load_ext(file):
@@ -132,7 +131,7 @@ def run_discord_bot():
 async def bot_main():
     async with bot:
         await load_extensions()
-        await bot.start(DISCORD_TOKEN)
+        await bot.start(TOKEN)
 
 def start_bot_thread():
     bot_thread = threading.Thread(target=run_discord_bot, name="DiscordBot")

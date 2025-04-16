@@ -88,7 +88,7 @@ def should_sync_commands():
         return True
 
 async def load_extensions():
-    from database import db  # just to ensure db exists before cog load if needed
+    from database import db  # if needed to init DB
     cog_files = [f for f in os.listdir("cogs") if f.endswith(".py") and f != "__init__.py"]
 
     async def load_ext(file):
@@ -97,10 +97,16 @@ async def load_extensions():
             await bot.load_extension(cog_path)
             logging.info(f"✅ Loaded cog: {cog_path}")
         except Exception as e:
-            logging.error(f"❌ Failed to load {cog_path}: {e}")
+            logging.error(f"❌ Failed to load {cog_path}: {e}", exc_info=True)
 
-    priority = [f for f in cog_files if f.startswith(("help", "admin", "core"))]
+    # Load priority cogs first
+    priority = [f for f in cog_files if f.startswith(("help", "admin", "core", "spotify"))]
     rest = [f for f in cog_files if f not in priority]
+
+    for file in priority:
+        await load_ext(file)
+
+    await asyncio.gather(*(load_ext(file) for file in rest))
 
     for file in priority:
         await load_ext(file)

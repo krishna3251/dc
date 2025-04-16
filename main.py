@@ -14,7 +14,7 @@ load_dotenv()
 import discord
 
 TOKEN = "your-bot-token"
-PREFIX = "!"
+PREFIX = "lx"
 INTENTS = discord.Intents.all()
 EXTENSIONS = []  # list of cog names like ["admin", "music"]
 

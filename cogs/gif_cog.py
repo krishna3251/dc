@@ -183,7 +183,6 @@ class GifCog(commands.Cog):
         
         return embed
     
-    # Generic action command methods
     async def perform_action(self, ctx, action, target=None):
         """Common method for performing any GIF action"""
         if target is None and action not in ["cry", "laugh"]:
@@ -198,73 +197,73 @@ class GifCog(commands.Cog):
             embed = self.create_action_embed(action, ctx.author, target, gif_url)
             await ctx.send(embed=embed)
     
-    # Define commands for each action
-    @commands.command(name="hug")
-    async def hug(self, ctx, *, target: discord.Member = None):
+    # Define slash commands for each action
+    @discord.slash_command(name="hug", description="Give someone a hug!")
+    async def hug(self, ctx, target: Optional[discord.Member] = None):
         """Give someone a hug!"""
         if target is None:
             target = ctx.author
         await self.perform_action(ctx, "hug", target)
     
-    @commands.command(name="slap")
-    async def slap(self, ctx, *, target: discord.Member = None):
+    @discord.slash_command(name="slap", description="Slap someone!")
+    async def slap(self, ctx, target: Optional[discord.Member] = None):
         """Slap someone!"""
         if target is None:
             target = ctx.author
         await self.perform_action(ctx, "slap", target)
     
-    @commands.command(name="kiss")
-    async def kiss(self, ctx, *, target: discord.Member = None):
+    @discord.slash_command(name="kiss", description="Kiss someone!")
+    async def kiss(self, ctx, target: Optional[discord.Member] = None):
         """Kiss someone!"""
         if target is None:
             target = ctx.author
         await self.perform_action(ctx, "kiss", target)
     
-    @commands.command(name="pat")
-    async def pat(self, ctx, *, target: discord.Member = None):
+    @discord.slash_command(name="pat", description="Pat someone on the head!")
+    async def pat(self, ctx, target: Optional[discord.Member] = None):
         """Pat someone on the head!"""
         if target is None:
             target = ctx.author
         await self.perform_action(ctx, "pat", target)
     
-    @commands.command(name="poke")
-    async def poke(self, ctx, *, target: discord.Member = None):
+    @discord.slash_command(name="poke", description="Poke someone!")
+    async def poke(self, ctx, target: Optional[discord.Member] = None):
         """Poke someone!"""
         if target is None:
             target = ctx.author
         await self.perform_action(ctx, "poke", target)
     
-    @commands.command(name="dance")
-    async def dance(self, ctx, *, target: discord.Member = None):
+    @discord.slash_command(name="dance", description="Dance with someone or by yourself!")
+    async def dance(self, ctx, target: Optional[discord.Member] = None):
         """Dance with someone or by yourself!"""
         await self.perform_action(ctx, "dance", target or ctx.author)
     
-    @commands.command(name="cry")
+    @discord.slash_command(name="cry", description="Show that you're crying")
     async def cry(self, ctx):
         """Show that you're crying"""
         await self.perform_action(ctx, "cry", ctx.author)
     
-    @commands.command(name="laugh")
+    @discord.slash_command(name="laugh", description="Show that you're laughing")
     async def laugh(self, ctx):
         """Show that you're laughing"""
         await self.perform_action(ctx, "laugh", ctx.author)
     
-    @commands.command(name="facepalm")
-    async def facepalm(self, ctx, *, target: discord.Member = None):
+    @discord.slash_command(name="facepalm", description="Facepalm at someone's actions")
+    async def facepalm(self, ctx, target: Optional[discord.Member] = None):
         """Facepalm at someone's actions"""
         if target is None:
             target = ctx.author
         await self.perform_action(ctx, "facepalm", target)
     
-    @commands.command(name="highfive")
-    async def highfive(self, ctx, *, target: discord.Member = None):
+    @discord.slash_command(name="highfive", description="Give someone a high five!")
+    async def highfive(self, ctx, target: Optional[discord.Member] = None):
         """Give someone a high five!"""
         if target is None:
             target = ctx.author
         await self.perform_action(ctx, "highfive", target)
     
-    @commands.command(name="gif")
-    async def gif(self, ctx, *, search_term: str):
+    @discord.slash_command(name="gif", description="Search for a GIF")
+    async def gif(self, ctx, search_term: str):
         """Search for a GIF"""
         async with ctx.typing():
             gif_url = None
@@ -309,7 +308,7 @@ class GifCog(commands.Cog):
             else:
                 await ctx.send(f"Couldn't find a GIF for '{search_term}'. Try a different search term.")
     
-    @commands.command(name="gifhelp")
+    @discord.slash_command(name="gifhelp", description="Show available GIF commands")
     async def gifhelp(self, ctx):
         """Show available GIF commands"""
         embed = discord.Embed(
@@ -320,14 +319,14 @@ class GifCog(commands.Cog):
         
         # Action commands
         actions = ["hug", "slap", "kiss", "pat", "poke", "dance", "cry", "laugh", "facepalm", "highfive"]
-        action_commands = "\n".join([f"**{ctx.prefix}{action} [@user]** - {action.capitalize()} someone!" for action in actions])
+        action_commands = "\n".join([f"/{action} [@user] - {action.capitalize()} someone!" for action in actions])
         
         embed.add_field(name="Action GIFs", value=action_commands, inline=False)
         
         # Search command
         embed.add_field(
             name="GIF Search",
-            value=f"**{ctx.prefix}gif [search term]** - Search for a GIF with the given term",
+            value="/gif [search term] - Search for a GIF with the given term",
             inline=False
         )
         

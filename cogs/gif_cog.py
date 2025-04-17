@@ -3,13 +3,10 @@ from discord.ext import commands
 import random
 import aiohttp
 import os
-from typing import Optiona    l
-
-bot = commands.Bot(command_prefix="lx", intents=intents)    
+from typing import Optional
 
 class GifCog(commands.Cog):
     """Send various GIFs and animated reactions"""
-    
     
     def __init__(self, bot):
         self.bot = bot
@@ -337,7 +334,6 @@ class GifCog(commands.Cog):
         embed.set_footer(text="Most commands can target another user or yourself!")
         
         await ctx.send(embed=embed)
-    
 
 async def setup(bot):
     await bot.add_cog(GifCog(bot))
